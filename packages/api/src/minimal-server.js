@@ -56,6 +56,7 @@ fastify.get('/api/status', async (request, reply) => {
     endpoints: {
       health: '/health',
       'database-test': '/api/database-test',
+      'seed-demo': 'POST /api/seed-demo',
       auth: '/api/auth (coming soon)',
       users: '/api/users (coming soon)',
       yachts: '/api/yachts (coming soon)',
@@ -98,6 +99,152 @@ fastify.get('/api/database-test', async (request, reply) => {
   } catch (error) {
     return {
       database: 'error',
+      error: error.message
+    };
+  }
+});
+
+// Seed demo data endpoint
+fastify.post('/api/seed-demo', async (request, reply) => {
+  try {
+    // Create currencies
+    const currencies = await Promise.all([
+      prisma.currencyCode.upsert({
+        where: { code: 'USD' },
+        update: {},
+        create: {
+          code: 'USD',
+          name: 'US Dollar',
+          symbol: '$',
+          decimalPlaces: 2,
+          isDefault: true,
+          createdByUserId: 'system'
+        }
+      }),
+      prisma.currencyCode.upsert({
+        where: { code: 'EUR' },
+        update: {},
+        create: {
+          code: 'EUR',
+          name: 'Euro',
+          symbol: '€',
+          decimalPlaces: 2,
+          createdByUserId: 'system'
+        }
+      }),
+      prisma.currencyCode.upsert({
+        where: { code: 'GBP' },
+        update: {},
+        create: {
+          code: 'GBP',
+          name: 'British Pound',
+          symbol: '£',
+          decimalPlaces: 2,
+          createdByUserId: 'system'
+        }
+      })
+    ]);
+
+    // Create sample owner
+    const owner = await prisma.user.upsert({
+      where: { email: 'owner@yachtcash.com' },
+      update: {},
+      create: {
+        email: 'owner@yachtcash.com',
+        passwordHash: '$2a$10$demo.hash.for.testing',
+        assignedRoles: ['YACHT_OWNER'],
+        createdByUserId: 'system',
+        profile: {
+          create: {
+            firstName: 'Alexander',
+            lastName: 'Maritime',
+            phone: '+1-555-YACHT-1',
+            country: 'Monaco',
+            preferences: {
+              currency: 'EUR',
+              notifications: true
+            }
+          }
+        }
+      }
+    });
+
+    // Create sample captain
+    const captain = await prisma.user.upsert({
+      where: { email: 'captain@yachtcash.com' },
+      update: {},
+      create: {
+        email: 'captain@yachtcash.com',
+        passwordHash: '$2a$10$demo.hash.for.testing',
+        assignedRoles: ['CAPTAIN'],
+        createdByUserId: 'system',
+        profile: {
+          create: {
+            firstName: 'Maria',
+            lastName: 'Rodriguez',
+            phone: '+1-555-CAPT-1',
+            country: 'Spain',
+            preferences: {
+              currency: 'EUR',
+              language: 'en'
+            }
+          }
+        }
+      }
+    });
+
+    // Create sample yacht
+    const yacht = await prisma.yacht.upsert({
+      where: { name: 'Serenity' },
+      update: {},
+      create: {
+        name: 'Serenity',
+        imoNumber: 'IMO-DEMO-001',
+        ownerUserId: owner.id,
+        primaryCaptainUserId: captain.id,
+        cashBalances: {
+          create: [
+            {
+              currencyCodeId: currencies[0].id, // USD
+              amount: 25000.00,
+              thresholdAlert: 5000.00,
+              lastUpdated: new Date(),
+              updatedByUserId: captain.id
+            },
+            {
+              currencyCodeId: currencies[1].id, // EUR
+              amount: 18000.00,
+              thresholdAlert: 3000.00,
+              lastUpdated: new Date(),
+              updatedByUserId: captain.id
+            }
+          ]
+        }
+      }
+    });
+
+    // Get final counts
+    const finalCounts = {
+      users: await prisma.user.count(),
+      yachts: await prisma.yacht.count(),
+      currencies: await prisma.currencyCode.count(),
+      cashBalances: await prisma.cashBalance.count()
+    };
+
+    return {
+      success: true,
+      message: 'Demo data seeded successfully! 🛥️',
+      data: finalCounts,
+      seeded: {
+        currencies: currencies.map(c => `${c.code} (${c.symbol})`),
+        users: ['Alexander Maritime (Owner)', 'Maria Rodriguez (Captain)'],
+        yachts: ['Serenity - IMO-DEMO-001'],
+        cashBalances: ['$25,000 USD', '€18,000 EUR']
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
       error: error.message
     };
   }
