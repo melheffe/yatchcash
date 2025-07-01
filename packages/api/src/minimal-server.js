@@ -20,6 +20,11 @@ fastify.register(require('@fastify/static'), {
   decorateReply: false
 });
 
+// Redirect /admin to /admin/ for better UX
+fastify.get('/admin', async (request, reply) => {
+  return reply.redirect(301, '/admin/');
+});
+
 // Health check endpoint with environment info
 fastify.get('/health', async (request, reply) => {
   let dbStatus = 'unknown';
