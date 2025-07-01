@@ -15,8 +15,9 @@ fastify.register(require('@fastify/cors'), {
 
 // Register static file serving for admin panel
 fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../../../packages/admin-panel/dist'),
+  root: path.join(__dirname, '../../admin-panel/dist'),
   prefix: '/admin/',
+  decorateReply: false
 });
 
 // Health check endpoint with environment info
@@ -38,7 +39,12 @@ fastify.get('/health', async (request, reply) => {
   };
 });
 
-// Admin panel route - serve the index.html
+// Admin panel route - serve the index.html for SPA routing
+fastify.get('/admin/*', async (request, reply) => {
+  return reply.sendFile('index.html');
+});
+
+// Admin panel root route
 fastify.get('/admin', async (request, reply) => {
   return reply.sendFile('index.html');
 });
