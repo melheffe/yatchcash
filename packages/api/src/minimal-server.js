@@ -193,35 +193,43 @@ fastify.post('/api/seed-demo', async (request, reply) => {
       }
     });
 
-    // Create sample yacht
-    const yacht = await prisma.yacht.upsert({
-      where: { name: 'Serenity' },
-      update: {},
-      create: {
-        name: 'Serenity',
-        imoNumber: 'IMO-DEMO-001',
-        ownerUserId: owner.id,
-        primaryCaptainUserId: captain.id,
-        cashBalances: {
-          create: [
-            {
-              currencyCodeId: currencies[0].id, // USD
-              amount: 25000.00,
-              thresholdAlert: 5000.00,
-              lastUpdated: new Date(),
-              updatedByUserId: captain.id
-            },
-            {
-              currencyCodeId: currencies[1].id, // EUR
-              amount: 18000.00,
-              thresholdAlert: 3000.00,
-              lastUpdated: new Date(),
-              updatedByUserId: captain.id
-            }
-          ]
-        }
-      }
+    // Create sample yacht (check if it exists first)
+    let yacht = await prisma.yacht.findFirst({
+      where: { name: 'Serenity' }
     });
+
+    if (!yacht) {
+      yacht = await prisma.yacht.create({
+        data: {
+          name: 'Serenity',
+          imoNumber: 'IMO-DEMO-001',
+          ownerUserId: owner.id,
+          primaryCaptainUserId: captain.id
+        }
+      });
+
+      // Create cash balances separately
+      await prisma.cashBalance.createMany({
+        data: [
+          {
+            yachtId: yacht.id,
+            currencyCodeId: currencies[0].id, // USD
+            amount: 25000.00,
+            thresholdAlert: 5000.00,
+            lastUpdated: new Date(),
+            updatedByUserId: captain.id
+          },
+          {
+            yachtId: yacht.id,
+            currencyCodeId: currencies[1].id, // EUR
+            amount: 18000.00,
+            thresholdAlert: 3000.00,
+            lastUpdated: new Date(),
+            updatedByUserId: captain.id
+          }
+        ]
+      });
+    }
 
     // Get final counts
     const finalCounts = {
