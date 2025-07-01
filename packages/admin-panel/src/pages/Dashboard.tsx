@@ -2,28 +2,23 @@ import React, { useEffect, useState } from 'react';
 import {
   Container,
   Title,
-  SimpleGrid,
+  Grid,
   Card,
   Text,
   Group,
   ThemeIcon,
-  Progress,
   Stack,
   Badge,
   Table,
-  ActionIcon,
   Loader,
   Alert,
   NumberFormatter,
 } from '@mantine/core';
 import {
-  IconUsers,
   IconShip,
+  IconUsers,
   IconReceipt,
   IconCash,
-  IconTrendingUp,
-  IconAlertTriangle,
-  IconEye,
   IconCurrencyDollar,
   IconCurrencyEuro,
 } from '@tabler/icons-react';
@@ -140,73 +135,81 @@ export const Dashboard: React.FC = () => {
       </Group>
 
       {/* Statistics Cards */}
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} mb='xl'>
-        <Card shadow='sm' padding='lg' radius='md' withBorder>
-          <Group justify='space-between' mb='xs'>
-            <Text fw={500}>Total Users</Text>
-            <ThemeIcon color='blue' variant='light'>
-              <IconUsers size='1.4rem' />
-            </ThemeIcon>
-          </Group>
-          <Text size='xl' fw={700}>
-            {stats?.users.total || 0}
-          </Text>
-          <Text size='sm' c='dimmed'>
-            {stats?.users.active || 0} active users
-          </Text>
-        </Card>
+      <Grid mb='xl'>
+        <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+          <Card shadow='sm' padding='lg' radius='md' withBorder>
+            <Group justify='space-between' mb='xs'>
+              <Text fw={500}>Total Users</Text>
+              <ThemeIcon color='blue' variant='light'>
+                <IconUsers size='1.4rem' />
+              </ThemeIcon>
+            </Group>
+            <Text size='xl' fw={700}>
+              {stats?.users.total || 0}
+            </Text>
+            <Text size='sm' c='dimmed'>
+              {stats?.users.active || 0} active users
+            </Text>
+          </Card>
+        </Grid.Col>
 
-        <Card shadow='sm' padding='lg' radius='md' withBorder>
-          <Group justify='space-between' mb='xs'>
-            <Text fw={500}>Fleet Size</Text>
-            <ThemeIcon color='cyan' variant='light'>
-              <IconShip size='1.4rem' />
-            </ThemeIcon>
-          </Group>
-          <Text size='xl' fw={700}>
-            {stats?.yachts.total || 0}
-          </Text>
-          <Text size='sm' c='dimmed'>
-            {stats?.yachts.active || 0} active yachts
-          </Text>
-        </Card>
+        <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+          <Card shadow='sm' padding='lg' radius='md' withBorder>
+            <Group justify='space-between' mb='xs'>
+              <Text fw={500}>Fleet Size</Text>
+              <ThemeIcon color='cyan' variant='light'>
+                <IconShip size='1.4rem' />
+              </ThemeIcon>
+            </Group>
+            <Text size='xl' fw={700}>
+              {stats?.yachts.total || 0}
+            </Text>
+            <Text size='sm' c='dimmed'>
+              {stats?.yachts.active || 0} active yachts
+            </Text>
+          </Card>
+        </Grid.Col>
 
-        <Card shadow='sm' padding='lg' radius='md' withBorder>
-          <Group justify='space-between' mb='xs'>
-            <Text fw={500}>Transactions</Text>
-            <ThemeIcon color='green' variant='light'>
-              <IconReceipt size='1.4rem' />
-            </ThemeIcon>
-          </Group>
-          <Text size='xl' fw={700}>
-            {stats?.transactions.total || 0}
-          </Text>
-          <Text size='sm' c='dimmed'>
-            {stats?.transactions.pending || 0} pending
-          </Text>
-        </Card>
+        <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+          <Card shadow='sm' padding='lg' radius='md' withBorder>
+            <Group justify='space-between' mb='xs'>
+              <Text fw={500}>Transactions</Text>
+              <ThemeIcon color='green' variant='light'>
+                <IconReceipt size='1.4rem' />
+              </ThemeIcon>
+            </Group>
+            <Text size='xl' fw={700}>
+              {stats?.transactions.total || 0}
+            </Text>
+            <Text size='sm' c='dimmed'>
+              {stats?.transactions.pending || 0} pending
+            </Text>
+          </Card>
+        </Grid.Col>
 
-        <Card shadow='sm' padding='lg' radius='md' withBorder>
-          <Group justify='space-between' mb='xs'>
-            <Text fw={500}>Cash on Hand</Text>
-            <ThemeIcon color='yellow' variant='light'>
-              <IconCash size='1.4rem' />
-            </ThemeIcon>
-          </Group>
-          <Stack gap='xs'>
-            {stats?.cashBalances &&
-              Object.entries(stats.cashBalances).map(([currency, amount]) => (
-                <Group key={currency} gap='xs'>
-                  {getCurrencyIcon(currency)}
-                  <NumberFormatter value={amount} thousandSeparator />
-                  <Text size='sm' c='dimmed'>
-                    {currency}
-                  </Text>
-                </Group>
-              ))}
-          </Stack>
-        </Card>
-      </SimpleGrid>
+        <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+          <Card shadow='sm' padding='lg' radius='md' withBorder>
+            <Group justify='space-between' mb='xs'>
+              <Text fw={500}>Cash on Hand</Text>
+              <ThemeIcon color='yellow' variant='light'>
+                <IconCash size='1.4rem' />
+              </ThemeIcon>
+            </Group>
+            <Stack gap='xs'>
+              {stats?.cashBalances &&
+                Object.entries(stats.cashBalances).map(([currency, amount]) => (
+                  <Group key={currency} gap='xs'>
+                    {getCurrencyIcon(currency)}
+                    <NumberFormatter value={amount} thousandSeparator />
+                    <Text size='sm' c='dimmed'>
+                      {currency}
+                    </Text>
+                  </Group>
+                ))}
+            </Stack>
+          </Card>
+        </Grid.Col>
+      </Grid>
 
       {/* Fleet Overview */}
       <Card shadow='sm' padding='lg' radius='md' withBorder>

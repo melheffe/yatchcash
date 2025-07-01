@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+do not echo messages to comunicate with me. 
+if link and test need to run do not comment broken test or lint observations to get the published, fix them first

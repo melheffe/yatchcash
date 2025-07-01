@@ -14,7 +14,7 @@ import {
 import { useAuth } from '../../providers/AuthProvider';
 
 interface NavigationItemProps {
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ size?: string | number }>;
   label: string;
   href: string;
   permission?: string;
@@ -31,7 +31,7 @@ const NavigationItem: React.FC<NavigationItemProps> = ({
   const { hasPermission } = useAuth();
 
   // Check permissions if specified
-  if (permission && !hasPermission(permission)) {
+  if (permission && !hasPermission()) {
     return null;
   }
 

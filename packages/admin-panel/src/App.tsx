@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   MantineProvider,
   Container,
@@ -9,7 +9,6 @@ import {
   Text,
   Box,
   createTheme,
-  rem,
 } from '@mantine/core';
 import { IconShip, IconUsers, IconDashboard } from '@tabler/icons-react';
 import { Dashboard } from './pages/Dashboard';
