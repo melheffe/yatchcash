@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const captainPort = env.CAPTAIN_PWA_PORT || '3002';
 
   return {
+    base: mode === 'production' ? '/captain/' : '/',
     plugins: [
       react(),
       VitePWA({
@@ -53,8 +54,8 @@ export default defineConfig(({ mode }) => {
           background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
-          start_url: '/',
-          scope: '/',
+          start_url: mode === 'production' ? '/captain/' : '/',
+          scope: mode === 'production' ? '/captain/' : '/',
           icons: [
             {
               src: 'pwa-192x192.png',
