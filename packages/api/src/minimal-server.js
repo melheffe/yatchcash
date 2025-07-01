@@ -497,9 +497,31 @@ fastify.get('/api/admin/yachts', async (request, reply) => {
       }
     });
 
+    const formattedYachts = yachts.map(yacht => ({
+      id: yacht.id,
+      name: yacht.name,
+      imoNumber: yacht.imoNumber,
+      owner: yacht.owner.profile ? 
+        `${yacht.owner.profile.firstName} ${yacht.owner.profile.lastName}` : 
+        yacht.owner.email,
+      captain: yacht.primaryCaptain?.profile ? 
+        `${yacht.primaryCaptain.profile.firstName} ${yacht.primaryCaptain.profile.lastName}` : 
+        yacht.primaryCaptain?.email || 'Not assigned',
+      cashBalances: yacht.cashBalances.map(balance => ({
+        amount: Number(balance.amount),
+        currency: balance.currencyCode.code,
+        symbol: balance.currencyCode.symbol,
+        formatted: `${balance.currencyCode.symbol}${Number(balance.amount).toLocaleString()}`
+      })),
+      totalTransactions: yacht._count.transactions,
+      crewMembers: yacht._count.yachtUsers,
+      isActive: yacht.isActive,
+      createdAt: yacht.createdAt
+    }));
+
     return {
       success: true,
-      data: yachts
+      data: formattedYachts
     };
   } catch (error) {
     return reply.status(500).send({
@@ -518,18 +540,40 @@ fastify.get('/api/admin/users', async (request, reply) => {
       where: { tenantId: legacyTenantId },
       include: {
         profile: true,
-        yachtAssignments: {
-          include: {
-            yacht: true,
-            role: true
+        ownedYachts: { select: { name: true } },
+        managedYachts: { select: { name: true } },
+        captainYachts: { select: { name: true } },
+        _count: {
+          select: {
+            createdTransactions: true
           }
         }
       }
     });
 
+    const formattedUsers = users.map(user => ({
+      id: user.id,
+      email: user.email,
+      name: user.profile ? 
+        `${user.profile.firstName} ${user.profile.lastName}` : 
+        'No profile',
+      roles: user.assignedRoles,
+      status: user.status,
+      country: user.profile?.country || 'Not specified',
+      phone: user.profile?.phone || 'Not provided',
+      lastLogin: user.lastLogin,
+      yachts: {
+        owned: user.ownedYachts.map(y => y.name),
+        managed: user.managedYachts.map(y => y.name),
+        captain: user.captainYachts.map(y => y.name)
+      },
+      transactionCount: user._count.createdTransactions,
+      createdAt: user.createdAt
+    }));
+
     return {
       success: true,
-      data: users
+      data: formattedUsers
     };
   } catch (error) {
     return reply.status(500).send({
