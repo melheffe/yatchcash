@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const adminPort = env.ADMIN_PANEL_PORT || '3000';
 
   return {
+    base: '/admin/', // Set base path for admin panel
     plugins: [
       react(),
       VitePWA({
