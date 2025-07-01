@@ -1,5 +1,6 @@
 const fastify = require('fastify')({ logger: true });
 const { PrismaClient } = require('@prisma/client');
+const path = require('path');
 
 // Load environment variables
 require('dotenv').config();
@@ -10,6 +11,12 @@ const prisma = new PrismaClient();
 // Add CORS
 fastify.register(require('@fastify/cors'), {
   origin: true
+});
+
+// Register static file serving for admin panel
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, '../../../packages/admin-panel/dist'),
+  prefix: '/admin/',
 });
 
 // Health check endpoint with environment info
@@ -31,6 +38,11 @@ fastify.get('/health', async (request, reply) => {
   };
 });
 
+// Admin panel route - serve the index.html
+fastify.get('/admin', async (request, reply) => {
+  return reply.sendFile('index.html');
+});
+
 // Root endpoint
 fastify.get('/', async (request, reply) => {
   return { 
@@ -43,7 +55,12 @@ fastify.get('/', async (request, reply) => {
       'Offline-first PWA',
       'Receipt management',
       'Role-based access control'
-    ]
+    ],
+    links: {
+      admin: '/admin',
+      api: '/api/status',
+      health: '/health'
+    }
   };
 });
 
