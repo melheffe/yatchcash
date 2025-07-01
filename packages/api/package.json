@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "npx tsc",
+    "build": "tsc",
     "start": "node dist/server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -13,7 +13,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx src/seed.ts",
     "lint": "eslint src --ext .ts",
-    "type-check": "npx tsc --noEmit"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@yachtcash/shared": "file:../shared",
@@ -27,7 +27,8 @@
     "@prisma/client": "^5.6.0",
     "bcryptjs": "^2.4.3",
     "zod": "^3.22.4",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -36,7 +37,6 @@
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "prisma": "^5.6.0",
-    "tsx": "^3.14.0",
-    "typescript": "^5.2.2"
+    "tsx": "^3.14.0"
   }
 }
