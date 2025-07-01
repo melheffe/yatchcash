@@ -26,7 +26,10 @@ fastify.addHook('preHandler', async (request, _reply) => {
   // Skip tenant resolution for super admin routes and static files
   if (
     request.url.startsWith('/admin/') ||
+    request.url.startsWith('/tenant/') ||
+    request.url.startsWith('/captain/') ||
     request.url.startsWith('/api/super-admin/') ||
+    request.url.startsWith('/api/admin/') ||
     request.url.startsWith('/api/status') ||
     request.url.startsWith('/health') ||
     request.url === '/'
@@ -70,14 +73,16 @@ fastify.register(require('@fastify/static'), {
 const fs = require('fs');
 
 // Custom route handler for serving static files and SPA fallback
-const serveApp = appPath => {
+const serveApp = (appPath, appPrefix) => {
   return async (request, reply) => {
     const filePath = request.url;
-    const fullPath = path.join(appPath, filePath.replace(/^\/[^/]+\//, ''));
+    // Remove the app prefix (e.g., '/admin/', '/tenant/', '/captain/') from the URL
+    const relativePath = filePath.replace(new RegExp(`^${appPrefix}`), '');
+    const fullPath = path.join(appPath, relativePath);
 
     // Check if it's a file with extension (static asset)
-    if (path.extname(filePath) && fs.existsSync(fullPath)) {
-      return reply.sendFile(filePath.replace(/^\/[^/]+\//, ''), appPath);
+    if (path.extname(relativePath) && fs.existsSync(fullPath)) {
+      return reply.sendFile(relativePath, appPath);
     }
 
     // SPA fallback - serve index.html for routes without extensions
@@ -87,15 +92,15 @@ const serveApp = appPath => {
 
 // Admin panel routes
 const adminPath = path.join(__dirname, '../../../packages/admin-panel/dist');
-fastify.get('/admin/*', serveApp(adminPath));
+fastify.get('/admin/*', serveApp(adminPath, '/admin/'));
 
 // Tenant dashboard routes
 const tenantPath = path.join(__dirname, '../../../packages/tenant-dashboard/dist');
-fastify.get('/tenant/*', serveApp(tenantPath));
+fastify.get('/tenant/*', serveApp(tenantPath, '/tenant/'));
 
 // Captain PWA routes
 const captainPath = path.join(__dirname, '../../../packages/captain-pwa/dist');
-fastify.get('/captain/*', serveApp(captainPath));
+fastify.get('/captain/*', serveApp(captainPath, '/captain/'));
 
 // Redirect /admin to /admin/ for better UX
 fastify.get('/admin', async (request, reply) => {
