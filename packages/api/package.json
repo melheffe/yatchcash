@@ -4,14 +4,14 @@
   "description": "YachtCash API server with Fastify and Prisma",
   "main": "src/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "ts-node --esm src/server.ts",
     "build": "echo 'Skipping TypeScript build for deployment' && mkdir -p dist && cp -r src/* dist/",
-    "start": "tsx src/server.ts",
+    "start": "ts-node --esm src/server.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "tsx src/seed.ts",
+    "db:seed": "ts-node --esm src/seed.ts",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },
@@ -29,7 +29,7 @@
     "bcryptjs": "^2.4.3",
     "zod": "^3.22.4",
     "dotenv": "^16.3.1",
-    "tsx": "^3.14.0"
+    "ts-node": "^10.9.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
