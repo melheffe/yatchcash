@@ -57,6 +57,9 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
+# Husky
+.husky/_
+
 # Prisma
 packages/api/prisma/migrations/
 

@@ -20,6 +20,19 @@
     "build:captain": "cd packages/captain-pwa && npm run build",
     "build:tenant": "cd packages/tenant-dashboard && npm run build",
     "setup": "npm install && npm run build:shared",
+    "lint": "eslint packages --ext .js,.jsx,.ts,.tsx --report-unused-disable-directives",
+    "lint:fix": "eslint packages --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"packages/**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"packages/**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "type-check": "npm run type-check:shared && npm run type-check:api && npm run type-check:admin && npm run type-check:captain && npm run type-check:tenant",
+    "type-check:shared": "cd packages/shared && npm run type-check",
+    "type-check:api": "cd packages/api && npm run type-check",
+    "type-check:admin": "cd packages/admin-panel && npm run type-check",
+    "type-check:captain": "cd packages/captain-pwa && npm run type-check",
+    "type-check:tenant": "cd packages/tenant-dashboard && npm run type-check",
+    "lint-and-format": "npm run lint:fix && npm run format",
+    "pre-commit": "lint-staged",
+    "prepare": "husky install",
     "db:generate": "cd packages/api && npx prisma generate",
     "db:migrate": "cd packages/api && npx prisma migrate dev",
     "db:studio": "cd packages/api && npx prisma studio",
@@ -29,7 +42,19 @@
     "start": "cd packages/api && npm start"
   },
   "devDependencies": {
+
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5",
     "typescript": "^5.2.2"
   },
   "engines": {
@@ -37,4 +62,4 @@
     "npm": "9.x"
   },
   "heroku-run-build-script": true
-} 
+}

@@ -1,0 +1,12 @@
+{
+  "packages/**/*.{js,jsx,ts,tsx}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "packages/**/*.{json,md,yml,yaml}": [
+    "prettier --write"
+  ],
+  "packages/**/*.{ts,tsx}": [
+    "bash -c 'cd $(dirname \"$0\") && npm run type-check'"
+  ]
+} 

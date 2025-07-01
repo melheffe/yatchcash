@@ -7,9 +7,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "echo 'Skipping TypeScript for captain PWA' && vite build --mode production",
+    "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -34,4 +36,4 @@
     "vite-plugin-pwa": "^0.16.4",
     "workbox-window": "^7.0.0"
   }
-} 
+}
