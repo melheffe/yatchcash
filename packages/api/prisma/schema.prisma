@@ -10,6 +10,44 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Multitenant Architecture
+model Tenant {
+  id                String   @id @default(cuid())
+  name              String   // Company/Organization name
+  subdomain         String   @unique // customer1.yachtcash.com
+  email             String   // Primary contact email
+  phone             String?
+  address           String?
+  country           String?
+  status            TenantStatus @default(ACTIVE)
+  subscriptionPlan  String   @default("basic") @map("subscription_plan")
+  isOnTrial         Boolean  @default(true) @map("is_trial")
+  trialEndsAt       DateTime? @map("trial_ends_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdByUserId   String?  @map("created_by_user_id") // Super admin who created this tenant
+
+  // Relations
+  users             User[]
+  yachts            Yacht[]
+  cashRecipients    CashRecipient[]
+  expenseCategories ExpenseCategory[]
+  roles             Role[]
+  permissions       Permission[]
+  alerts            Alert[]
+  reports           Report[]
+  auditLogs         AuditLog[]
+
+  @@map("tenants")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  TRIAL_EXPIRED
+}
+
 // Core Authentication & Users
 model User {
   id                String   @id @default(cuid())
@@ -19,11 +57,17 @@ model User {
   assignedRoles     String[] @map("assigned_roles")
   permissions       String[] // Permission overrides
   lastLogin         DateTime? @map("last_login")
+  
+  // Multitenancy
+  tenantId          String?  @map("tenant_id") // null for super admin users
+  isSuperAdmin      Boolean  @default(false) @map("is_super_admin")
+  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
   createdByUserId   String?  @map("created_by_user_id")
 
   // Relations
+  tenant            Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   profile           Profile?
   sessions          Session[]
   ownedYachts       Yacht[] @relation("YachtOwner")
@@ -75,36 +119,50 @@ model Profile {
 // RBAC
 model Role {
   id              String   @id @default(cuid())
-  name            String   @unique
+  name            String
   displayName     String   @map("display_name")
   description     String
   permissions     String[] // Permission IDs
   isSystemRole    Boolean  @default(false) @map("is_system_role")
   isActive        Boolean  @default(true) @map("is_active")
   sortOrder       Int      @default(0) @map("sort_order")
+  
+  // Multitenancy
+  tenantId        String?  @map("tenant_id") // null for system roles
+  
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   createdByUserId String   @map("created_by_user_id")
 
   // Relations
+  tenant          Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   yachtUsers      YachtUser[]
 
+  @@unique([name, tenantId]) // Unique role names per tenant
   @@map("roles")
 }
 
 model Permission {
   id                  String   @id @default(cuid())
-  name                String   @unique
+  name                String
   displayName         String   @map("display_name")
   description         String
   resource            String
   action              PermissionAction
   isSystemPermission  Boolean  @default(false) @map("is_system_permission")
   isActive            Boolean  @default(true) @map("is_active")
+  
+  // Multitenancy
+  tenantId            String?  @map("tenant_id") // null for system permissions
+  
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
   createdByUserId     String   @map("created_by_user_id")
 
+  // Relations
+  tenant              Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, tenantId]) // Unique permission names per tenant
   @@map("permissions")
 }
 
@@ -125,10 +183,15 @@ model Yacht {
   primaryCaptainUserId  String?  @map("primary_captain_user_id")
   managerUserId         String?  @map("manager_user_id")
   isActive              Boolean  @default(true) @map("is_active")
+  
+  // Multitenancy
+  tenantId              String   @map("tenant_id")
+  
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   // Relations
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   owner                 User     @relation("YachtOwner", fields: [ownerUserId], references: [id])
   manager               User?    @relation("YachtManager", fields: [managerUserId], references: [id])
   primaryCaptain        User?    @relation("YachtCaptain", fields: [primaryCaptainUserId], references: [id])
@@ -273,11 +336,16 @@ model CashRecipient {
   isVerified        Boolean  @default(false) @map("is_verified")
   isBlacklisted     Boolean  @default(false) @map("is_blacklisted")
   verificationNotes String?  @map("verification_notes")
+  
+  // Multitenancy
+  tenantId          String   @map("tenant_id")
+  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
   createdByUserId   String   @map("created_by_user_id")
 
   // Relations
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdBy         User           @relation(fields: [createdByUserId], references: [id])
   transactions      Transaction[]
   confirmations     Confirmation[]
@@ -293,17 +361,22 @@ model ExpenseCategory {
   yachtId           String?  @map("yacht_id") // null for default categories
   defaultCategoryId String?  @map("default_category_id")
   isDefault         Boolean  @default(false) @map("is_default")
+  
+  // Multitenancy
+  tenantId          String?  @map("tenant_id") // null for global default categories
+  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
   createdByUserId   String   @map("created_by_user_id")
 
   // Relations
+  tenant            Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   yacht             Yacht?         @relation(fields: [yachtId], references: [id], onDelete: Cascade)
   defaultCategory   DefaultExpenseCategory? @relation(fields: [defaultCategoryId], references: [id])
   createdBy         User           @relation(fields: [createdByUserId], references: [id])
   transactions      Transaction[]
 
-  @@unique([name, yachtId])
+  @@unique([name, yachtId, tenantId])
   @@map("expense_categories")
 }
 
@@ -415,12 +488,17 @@ model Alert {
   message     String
   metadata    Json     @default("{}")
   priority    AlertPriority
+  
+  // Multitenancy
+  tenantId    String   @map("tenant_id")
+  
   createdAt   DateTime @default(now()) @map("created_at")
   readAt      DateTime? @map("read_at")
   isRead      Boolean  @default(false) @map("is_read")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   yacht       Yacht?    @relation(fields: [yachtId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   alertType   AlertType @relation(fields: [alertTypeId], references: [id])
@@ -466,10 +544,15 @@ model Report {
   generatedAt       DateTime @default(now()) @map("generated_at")
   status            ReportStatus @default(GENERATING)
   errorMessage      String?  @map("error_message")
+  
+  // Multitenancy
+  tenantId          String   @map("tenant_id")
+  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   // Relations
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   generatedBy       User     @relation(fields: [generatedByUserId], references: [id])
   yacht             Yacht?   @relation(fields: [yachtId], references: [id], onDelete: Cascade)
 
@@ -560,9 +643,14 @@ model AuditLog {
   oldValues  Json?    @map("old_values")
   newValues  Json?    @map("new_values")
   ipAddress  String?  @map("ip_address")
+  
+  // Multitenancy  
+  tenantId   String?  @map("tenant_id") // null for super admin actions
+  
   createdAt  DateTime @default(now()) @map("created_at")
 
   // Relations
+  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user       User?    @relation(fields: [userId], references: [id])
   yacht      Yacht?   @relation(fields: [yachtId], references: [id])
 

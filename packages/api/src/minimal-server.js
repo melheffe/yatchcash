@@ -13,6 +13,43 @@ fastify.register(require('@fastify/cors'), {
   origin: true
 });
 
+// Tenant-aware middleware
+fastify.addHook('preHandler', async (request, reply) => {
+  // Skip tenant resolution for super admin routes and static files
+  if (request.url.startsWith('/admin/') || 
+      request.url.startsWith('/api/super-admin/') || 
+      request.url.startsWith('/api/status') ||
+      request.url.startsWith('/health') ||
+      request.url === '/') {
+    return;
+  }
+
+  // Extract tenant from subdomain or header
+  let tenantId = null;
+  
+  // Check for tenant in headers (for API access)
+  if (request.headers['x-tenant-id']) {
+    tenantId = request.headers['x-tenant-id'];
+  }
+  
+  // Check for tenant from subdomain
+  if (!tenantId && request.headers.host) {
+    const subdomain = request.headers.host.split('.')[0];
+    if (subdomain && subdomain !== 'yatchcash' && subdomain !== 'www') {
+      const tenant = await prisma.tenant.findUnique({
+        where: { subdomain }
+      });
+      if (tenant) {
+        tenantId = tenant.id;
+      }
+    }
+  }
+
+  // Attach tenant context to request
+  request.tenantId = tenantId;
+  request.prisma = prisma; // Make prisma available to routes
+});
+
 // Register static file serving for admin panel
 fastify.register(require('@fastify/static'), {
   root: path.join(__dirname, '../../admin-panel/dist'),
@@ -55,7 +92,8 @@ fastify.get('/', async (request, reply) => {
       'Multi-currency support',
       'Offline-first PWA',
       'Receipt management',
-      'Role-based access control'
+      'Role-based access control',
+      'Multitenant SaaS architecture'
     ],
     links: {
       admin: '/admin/',
@@ -65,23 +103,470 @@ fastify.get('/', async (request, reply) => {
   };
 });
 
-// API status endpoint
+// API Status endpoint
 fastify.get('/api/status', async (request, reply) => {
-  return {
-    api: 'YachtCash Maritime API',
-    version: '1.0.0',
-    status: 'operational',
-    endpoints: {
-      health: '/health',
-      'database-test': '/api/database-test',
-      'seed-demo': 'POST /api/seed-demo',
-      'admin-stats': '/api/admin/stats',
-      'admin-yachts': '/api/admin/yachts',
-      'admin-users': '/api/admin/users',
-      'admin-transactions': '/api/admin/transactions/recent',
-      auth: '/api/auth (coming soon)'
+  try {
+    const tenantCount = await prisma.tenant.count();
+    const userCount = await prisma.user.count();
+    const yachtCount = await prisma.yacht.count();
+    
+    return {
+      success: true,
+      data: {
+        status: 'operational',
+        database: 'connected',
+        tenants: tenantCount,
+        users: userCount,
+        yachts: yachtCount,
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: 'Database connection failed'
+    });
+  }
+});
+
+// ================================
+// SUPER ADMIN ENDPOINTS
+// ================================
+
+// Super Admin Dashboard Stats
+fastify.get('/api/super-admin/stats', async (request, reply) => {
+  try {
+    const [tenants, totalUsers, totalYachts, totalTransactions] = await Promise.all([
+      prisma.tenant.count(),
+      prisma.user.count(),
+      prisma.yacht.count(),
+      prisma.transaction.count()
+    ]);
+
+    const recentTenants = await prisma.tenant.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        subdomain: true,
+        status: true,
+        subscriptionPlan: true,
+        createdAt: true,
+        _count: {
+          select: {
+            users: true,
+            yachts: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        tenants: {
+          total: tenants,
+          recent: recentTenants
+        },
+        users: { total: totalUsers },
+        yachts: { total: totalYachts },
+        transactions: { total: totalTransactions },
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// List All Tenants
+fastify.get('/api/super-admin/tenants', async (request, reply) => {
+  try {
+    const tenants = await prisma.tenant.findMany({
+      include: {
+        _count: {
+          select: {
+            users: true,
+            yachts: true,
+            reports: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return {
+      success: true,
+      data: tenants
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Create New Tenant
+fastify.post('/api/super-admin/tenants', async (request, reply) => {
+  try {
+    const { name, subdomain, email, phone, address, country, subscriptionPlan } = request.body;
+    
+    const tenant = await prisma.tenant.create({
+      data: {
+        name,
+        subdomain: subdomain.toLowerCase(),
+        email,
+        phone,
+        address,
+        country,
+        subscriptionPlan: subscriptionPlan || 'basic',
+        isOnTrial: true,
+        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days trial
+      }
+    });
+
+    return {
+      success: true,
+      data: tenant
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get Tenant Details
+fastify.get('/api/super-admin/tenants/:tenantId', async (request, reply) => {
+  try {
+    const { tenantId } = request.params;
+    
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: {
+        users: {
+          include: {
+            profile: true
+          }
+        },
+        yachts: {
+          include: {
+            owner: {
+              include: { profile: true }
+            },
+            primaryCaptain: {
+              include: { profile: true }
+            }
+          }
+        },
+        _count: {
+          select: {
+            users: true,
+            yachts: true,
+            reports: true,
+            alerts: true
+          }
+        }
+      }
+    });
+
+    if (!tenant) {
+      return reply.status(404).send({
+        success: false,
+        error: 'Tenant not found'
+      });
     }
-  };
+
+    return {
+      success: true,
+      data: tenant
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================================
+// TENANT-SPECIFIC ENDPOINTS  
+// ================================
+
+// Tenant Dashboard Stats (tenant-scoped version of the original admin stats)
+fastify.get('/api/tenant/stats', async (request, reply) => {
+  try {
+    const { tenantId } = request;
+    
+    if (!tenantId) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Tenant context required'
+      });
+    }
+
+    const [users, yachts, transactions, cashBalances] = await Promise.all([
+      prisma.user.count({ where: { tenantId } }),
+      prisma.yacht.count({ where: { tenantId } }),
+      prisma.transaction.count({ 
+        where: { yacht: { tenantId } }
+      }),
+      prisma.cashBalance.findMany({
+        where: { yacht: { tenantId } },
+        include: { currencyCode: true }
+      })
+    ]);
+
+    // Aggregate cash balances by currency
+    const balancesByCurrency = cashBalances.reduce((acc, balance) => {
+      const code = balance.currencyCode.code;
+      acc[code] = (acc[code] || 0) + parseFloat(balance.amount);
+      return acc;
+    }, {});
+
+    return {
+      success: true,
+      data: {
+        users: { total: users, active: users },
+        yachts: { total: yachts, active: yachts },
+        transactions: { 
+          total: transactions, 
+          pending: 0, 
+          flagged: 0 
+        },
+        cashBalances: balancesByCurrency
+      }
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Tenant Yachts
+fastify.get('/api/tenant/yachts', async (request, reply) => {
+  try {
+    const { tenantId } = request;
+    
+    if (!tenantId) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Tenant context required'
+      });
+    }
+
+    const yachts = await prisma.yacht.findMany({
+      where: { tenantId },
+      include: {
+        owner: { include: { profile: true } },
+        primaryCaptain: { include: { profile: true } },
+        manager: { include: { profile: true } },
+        cashBalances: { include: { currencyCode: true } },
+        _count: {
+          select: {
+            transactions: true,
+            yachtUsers: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: yachts
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Tenant Users
+fastify.get('/api/tenant/users', async (request, reply) => {
+  try {
+    const { tenantId } = request;
+    
+    if (!tenantId) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Tenant context required'
+      });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { tenantId },
+      include: {
+        profile: true,
+        yachtAssignments: {
+          include: {
+            yacht: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: users
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================================
+// LEGACY ADMIN ENDPOINTS (for current admin panel)
+// ================================
+
+// Legacy Admin Stats (using legacy tenant data)
+fastify.get('/api/admin/stats', async (request, reply) => {
+  try {
+    const legacyTenantId = 'tenant_legacy';
+    
+    const [users, yachts, transactions, cashBalances] = await Promise.all([
+      prisma.user.count({ where: { tenantId: legacyTenantId } }),
+      prisma.yacht.count({ where: { tenantId: legacyTenantId } }),
+      prisma.transaction.count({ 
+        where: { yacht: { tenantId: legacyTenantId } }
+      }),
+      prisma.cashBalance.findMany({
+        where: { yacht: { tenantId: legacyTenantId } },
+        include: { currencyCode: true }
+      })
+    ]);
+
+    const balancesByCurrency = cashBalances.reduce((acc, balance) => {
+      const code = balance.currencyCode.code;
+      acc[code] = (acc[code] || 0) + parseFloat(balance.amount);
+      return acc;
+    }, {});
+
+    return {
+      success: true,
+      data: {
+        users: { total: users, active: users },
+        yachts: { total: yachts, active: yachts },
+        transactions: { 
+          total: transactions, 
+          pending: 0, 
+          flagged: 0 
+        },
+        cashBalances: balancesByCurrency
+      }
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Legacy Admin Yachts
+fastify.get('/api/admin/yachts', async (request, reply) => {
+  try {
+    const legacyTenantId = 'tenant_legacy';
+    
+    const yachts = await prisma.yacht.findMany({
+      where: { tenantId: legacyTenantId },
+      include: {
+        owner: { include: { profile: true } },
+        primaryCaptain: { include: { profile: true } },
+        manager: { include: { profile: true } },
+        cashBalances: { include: { currencyCode: true } },
+        _count: {
+          select: {
+            transactions: true,
+            yachtUsers: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: yachts
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Legacy Admin Users
+fastify.get('/api/admin/users', async (request, reply) => {
+  try {
+    const legacyTenantId = 'tenant_legacy';
+    
+    const users = await prisma.user.findMany({
+      where: { tenantId: legacyTenantId },
+      include: {
+        profile: true,
+        yachtAssignments: {
+          include: {
+            yacht: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: users
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Legacy Admin Recent Transactions
+fastify.get('/api/admin/transactions/recent', async (request, reply) => {
+  try {
+    const legacyTenantId = 'tenant_legacy';
+    
+    const transactions = await prisma.transaction.findMany({
+      where: { yacht: { tenantId: legacyTenantId } },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        yacht: true,
+        createdBy: { include: { profile: true } },
+        currencyCode: true,
+        expenseCategory: true,
+        recipient: true
+      }
+    });
+
+    return {
+      success: true,
+      data: transactions
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Database test endpoint
