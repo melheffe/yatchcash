@@ -8,13 +8,21 @@ require('dotenv').config();
 // Initialize Prisma Client
 const prisma = new PrismaClient();
 
+// Debug: Log the static file paths
+console.log('🔍 Static file paths:');
+console.log('Admin panel:', path.join(__dirname, '../../../packages/admin-panel/dist'));
+console.log('Tenant dashboard:', path.join(__dirname, '../../../packages/tenant-dashboard/dist'));
+console.log('Captain PWA:', path.join(__dirname, '../../../packages/captain-pwa/dist'));
+console.log('Current working directory:', process.cwd());
+console.log('__dirname:', __dirname);
+
 // Add CORS
 fastify.register(require('@fastify/cors'), {
   origin: true,
 });
 
 // Tenant-aware middleware
-fastify.addHook('preHandler', async (request, reply) => {
+fastify.addHook('preHandler', async (request, _reply) => {
   // Skip tenant resolution for super admin routes and static files
   if (
     request.url.startsWith('/admin/') ||
@@ -54,15 +62,22 @@ fastify.addHook('preHandler', async (request, reply) => {
 
 // Register static file serving for admin panel
 fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../../admin-panel/dist'),
+  root: path.join(__dirname, '../../../packages/admin-panel/dist'),
   prefix: '/admin/',
   decorateReply: false,
 });
 
 // Register static file serving for tenant dashboard
 fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../../tenant-dashboard/dist'),
+  root: path.join(__dirname, '../../../packages/tenant-dashboard/dist'),
   prefix: '/tenant/',
+  decorateReply: false,
+});
+
+// Register static file serving for captain PWA
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, '../../../packages/captain-pwa/dist'),
+  prefix: '/captain/',
   decorateReply: false,
 });
 
@@ -76,8 +91,31 @@ fastify.get('/tenant', async (request, reply) => {
   return reply.redirect(301, '/tenant/');
 });
 
+// Redirect /captain to /captain/ for better UX
+fastify.get('/captain', async (request, reply) => {
+  return reply.redirect(301, '/captain/');
+});
+
+// Serve SPA fallback for admin panel routes
+fastify.get('/admin/*', async (_request, reply) => {
+  return reply.sendFile('index.html', path.join(__dirname, '../../../packages/admin-panel/dist'));
+});
+
+// Serve SPA fallback for tenant dashboard routes
+fastify.get('/tenant/*', async (_request, reply) => {
+  return reply.sendFile(
+    'index.html',
+    path.join(__dirname, '../../../packages/tenant-dashboard/dist')
+  );
+});
+
+// Serve SPA fallback for captain PWA routes
+fastify.get('/captain/*', async (_request, reply) => {
+  return reply.sendFile('index.html', path.join(__dirname, '../../../packages/captain-pwa/dist'));
+});
+
 // Health check endpoint with environment info
-fastify.get('/health', async (request, reply) => {
+fastify.get('/health', async (_request, _reply) => {
   let dbStatus = 'unknown';
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -96,7 +134,7 @@ fastify.get('/health', async (request, reply) => {
 });
 
 // Root endpoint
-fastify.get('/', async (request, reply) => {
+fastify.get('/', async (_request, _reply) => {
   return {
     message: '🛥️ Welcome to YachtCash API',
     version: '1.0.0',
@@ -109,11 +147,16 @@ fastify.get('/', async (request, reply) => {
       'Role-based access control',
       'Multitenant SaaS architecture',
     ],
-    links: {
-      admin: '/admin/',
-      api: '/api/status',
+    applications: {
+      'Super Admin Panel': '/admin/',
+      'Tenant Dashboard': '/tenant/',
+      'Captain Mobile PWA': '/captain/',
+    },
+    api: {
+      status: '/api/status',
       health: '/health',
     },
+    note: 'Visit the applications above to access the YachtCash interfaces',
   };
 });
 
@@ -776,7 +819,7 @@ fastify.get('/api/admin/transactions/recent', async (request, reply) => {
 });
 
 // Database test endpoint
-fastify.get('/api/database-test', async (request, reply) => {
+fastify.get('/api/database-test', async (_request, _reply) => {
   try {
     // Test database connection and schema
     const tableCount = await prisma.$queryRaw`
@@ -828,7 +871,7 @@ fastify.get('/api/database-test', async (request, reply) => {
 });
 
 // Seed demo data endpoint
-fastify.post('/api/seed-demo', async (request, reply) => {
+fastify.post('/api/seed-demo', async (_request, _reply) => {
   try {
     // Create currencies
     const currencies = await Promise.all([
