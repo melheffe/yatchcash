@@ -4,7 +4,7 @@
   "description": "YachtCash API server with Fastify and Prisma",
   "main": "src/minimal-server.js",
   "scripts": {
-    "dev": "ts-node --esm src/server.ts",
+    "dev": "node src/minimal-server.js",
     "build": "npx prisma generate && echo 'Using minimal server for deployment'",
     "start": "node src/minimal-server.js",
     "db:generate": "prisma generate",

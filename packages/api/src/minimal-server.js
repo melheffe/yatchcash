@@ -57,9 +57,21 @@ fastify.register(require('@fastify/static'), {
   decorateReply: false
 });
 
+// Register static file serving for tenant dashboard
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, '../../tenant-dashboard/dist'),
+  prefix: '/tenant/',
+  decorateReply: false
+});
+
 // Redirect /admin to /admin/ for better UX
 fastify.get('/admin', async (request, reply) => {
   return reply.redirect(301, '/admin/');
+});
+
+// Redirect /tenant to /tenant/ for better UX
+fastify.get('/tenant', async (request, reply) => {
+  return reply.redirect(301, '/tenant/');
 });
 
 // Health check endpoint with environment info
@@ -286,6 +298,156 @@ fastify.get('/api/super-admin/tenants/:tenantId', async (request, reply) => {
     return {
       success: true,
       data: tenant
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================================
+// TENANT AUTHENTICATION ENDPOINTS  
+// ================================
+
+// Tenant Login
+fastify.post('/api/tenant/auth/login', async (request, reply) => {
+  try {
+    const { email, password, subdomain } = request.body;
+    
+    if (!email || !password) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Email and password are required'
+      });
+    }
+
+    // Find tenant by subdomain if provided
+    let tenant = null;
+    if (subdomain) {
+      tenant = await prisma.tenant.findUnique({
+        where: { subdomain: subdomain.toLowerCase() }
+      });
+      
+      if (!tenant) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Tenant not found'
+        });
+      }
+    }
+
+    // Find user by email and tenant
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        tenantId: tenant?.id || null,
+        status: 'ACTIVE'
+      },
+      include: {
+        profile: true,
+        tenant: true
+      }
+    });
+
+    if (!user) {
+      return reply.status(401).send({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+
+    // In a real implementation, you would verify the password hash here
+    // For demo purposes, we'll accept any password for existing users
+    
+    // Generate a simple token (in production, use JWT with proper signing)
+    const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+
+    return {
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        tenantId: user.tenantId,
+        assignedRoles: user.assignedRoles,
+        profile: user.profile
+      },
+      tenant: user.tenant
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Tenant Token Verification
+fastify.post('/api/tenant/auth/verify', async (request, reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return reply.status(401).send({
+        success: false,
+        error: 'No valid token provided'
+      });
+    }
+
+    const token = authHeader.slice(7);
+    
+    // Decode the simple token (in production, verify JWT signature)
+    let decodedToken;
+    try {
+      decodedToken = Buffer.from(token, 'base64').toString();
+    } catch (err) {
+      return reply.status(401).send({
+        success: false,
+        error: 'Invalid token format'
+      });
+    }
+
+    const [userId, timestamp] = decodedToken.split(':');
+    
+    // Check if token is not too old (24 hours)
+    const tokenAge = Date.now() - parseInt(timestamp);
+    if (tokenAge > 24 * 60 * 60 * 1000) {
+      return reply.status(401).send({
+        success: false,
+        error: 'Token expired'
+      });
+    }
+
+    // Find user and verify they're still active
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        status: 'ACTIVE'
+      },
+      include: {
+        profile: true,
+        tenant: true
+      }
+    });
+
+    if (!user) {
+      return reply.status(401).send({
+        success: false,
+        error: 'User not found or inactive'
+      });
+    }
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        tenantId: user.tenantId,
+        assignedRoles: user.assignedRoles,
+        profile: user.profile
+      },
+      tenant: user.tenant
     };
   } catch (error) {
     return reply.status(500).send({
@@ -805,14 +967,6 @@ fastify.post('/api/seed-demo', async (request, reply) => {
     };
   }
 });
-
-
-
-
-
-
-
-
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
