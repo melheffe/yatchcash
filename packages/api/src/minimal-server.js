@@ -768,58 +768,7 @@ fastify.post('/api/seed-demo', async (request, reply) => {
 
 
 
-// Recent transactions for admin dashboard
-fastify.get('/api/admin/transactions/recent', async (request, reply) => {
-  try {
-    const limit = parseInt(request.query.limit) || 10;
-    
-    const transactions = await prisma.transaction.findMany({
-      take: limit,
-      orderBy: {
-        createdAt: 'desc'
-      },
-      include: {
-        yacht: true,
-        createdBy: {
-          include: {
-            profile: true
-          }
-        },
-        currencyCode: true,
-        expenseCategory: true,
-        recipient: true
-      }
-    });
 
-    const formattedTransactions = transactions.map(txn => ({
-      id: txn.id,
-      amount: Number(txn.amount),
-      currency: txn.currencyCode.code,
-      symbol: txn.currencyCode.symbol,
-      description: txn.description,
-      category: txn.expenseCategory.name,
-      yacht: txn.yacht.name,
-      createdBy: txn.createdBy.profile ? 
-        `${txn.createdBy.profile.firstName} ${txn.createdBy.profile.lastName}` : 
-        txn.createdBy.email,
-      recipient: txn.recipient?.name || 'N/A',
-      status: txn.status,
-      location: txn.location,
-      transactionDate: txn.transactionDate,
-      createdAt: txn.createdAt
-    }));
-
-    return {
-      success: true,
-      data: formattedTransactions
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-});
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
