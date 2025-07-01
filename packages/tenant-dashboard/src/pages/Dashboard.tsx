@@ -12,7 +12,7 @@ import {
   Table,
   Loader,
   Alert,
-  NumberFormatter
+  NumberFormatter,
 } from '@mantine/core';
 import {
   IconUsers,
@@ -21,7 +21,7 @@ import {
   IconCash,
   IconAlertTriangle,
   IconCurrencyDollar,
-  IconCurrencyEuro
+  IconCurrencyEuro,
 } from '@tabler/icons-react';
 import { buildApiUrl, getApiHeaders } from '../config';
 import { useAuth } from '../providers/AuthProvider';
@@ -56,7 +56,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchDashboardData, 30000);
     return () => clearInterval(interval);
@@ -65,12 +65,12 @@ export const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setError(null);
-      
+
       // Fetch tenant statistics
       const statsResponse = await fetch(buildApiUrl('/stats'), {
-        headers: getApiHeaders()
+        headers: getApiHeaders(),
       });
-      
+
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData.data);
@@ -78,14 +78,13 @@ export const Dashboard: React.FC = () => {
 
       // Fetch tenant yachts
       const yachtsResponse = await fetch(buildApiUrl('/yachts'), {
-        headers: getApiHeaders()
+        headers: getApiHeaders(),
       });
-      
+
       if (yachtsResponse.ok) {
         const yachtsData = await yachtsResponse.json();
         setYachts(yachtsData.data || []);
       }
-
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
@@ -96,17 +95,20 @@ export const Dashboard: React.FC = () => {
 
   const getCurrencyIcon = (currency: string) => {
     switch (currency.toUpperCase()) {
-      case 'USD': return <IconCurrencyDollar size="1rem" />;
-      case 'EUR': return <IconCurrencyEuro size="1rem" />;
-      default: return <IconCash size="1rem" />;
+      case 'USD':
+        return <IconCurrencyDollar size='1rem' />;
+      case 'EUR':
+        return <IconCurrencyEuro size='1rem' />;
+      default:
+        return <IconCash size='1rem' />;
     }
   };
 
   if (isLoading) {
     return (
-      <Container size="xl" py="xl">
-        <Group justify="center">
-          <Loader size="lg" />
+      <Container size='xl' py='xl'>
+        <Group justify='center'>
+          <Loader size='lg' />
           <Text>Loading your maritime dashboard...</Text>
         </Group>
       </Container>
@@ -115,8 +117,8 @@ export const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <Container size="xl" py="xl">
-        <Alert color="red" title="Dashboard Error" icon={<IconAlertTriangle size="1rem" />}>
+      <Container size='xl' py='xl'>
+        <Alert color='red' title='Dashboard Error' icon={<IconAlertTriangle size='1rem' />}>
           {error}
         </Alert>
       </Container>
@@ -124,87 +126,100 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Group justify="space-between" mb="xl">
+    <Container size='xl' py='xl'>
+      <Group justify='space-between' mb='xl'>
         <div>
           <Title order={1}>🛥️ {tenant?.name} Dashboard</Title>
-          <Text c="dimmed" size="sm">
+          <Text c='dimmed' size='sm'>
             Maritime petty cash management system
           </Text>
         </div>
-        <Badge variant="light" color="green" size="lg">
+        <Badge variant='light' color='green' size='lg'>
           Live Data
         </Badge>
       </Group>
 
       {/* Statistics Cards */}
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} mb="xl">
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} mb='xl'>
+        <Card shadow='sm' padding='lg' radius='md' withBorder>
+          <Group justify='space-between' mb='xs'>
             <Text fw={500}>Team Members</Text>
-            <ThemeIcon color="blue" variant="light">
-              <IconUsers size="1.4rem" />
+            <ThemeIcon color='blue' variant='light'>
+              <IconUsers size='1.4rem' />
             </ThemeIcon>
           </Group>
-          <Text size="xl" fw={700}>{stats?.users.total || 0}</Text>
-          <Text size="sm" c="dimmed">
+          <Text size='xl' fw={700}>
+            {stats?.users.total || 0}
+          </Text>
+          <Text size='sm' c='dimmed'>
             {stats?.users.active || 0} active users
           </Text>
         </Card>
 
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
+        <Card shadow='sm' padding='lg' radius='md' withBorder>
+          <Group justify='space-between' mb='xs'>
             <Text fw={500}>Your Fleet</Text>
-            <ThemeIcon color="cyan" variant="light">
-              <IconShip size="1.4rem" />
+            <ThemeIcon color='cyan' variant='light'>
+              <IconShip size='1.4rem' />
             </ThemeIcon>
           </Group>
-          <Text size="xl" fw={700}>{stats?.yachts.total || 0}</Text>
-          <Text size="sm" c="dimmed">
+          <Text size='xl' fw={700}>
+            {stats?.yachts.total || 0}
+          </Text>
+          <Text size='sm' c='dimmed'>
             {stats?.yachts.active || 0} active yachts
           </Text>
         </Card>
 
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
+        <Card shadow='sm' padding='lg' radius='md' withBorder>
+          <Group justify='space-between' mb='xs'>
             <Text fw={500}>Transactions</Text>
-            <ThemeIcon color="green" variant="light">
-              <IconReceipt size="1.4rem" />
+            <ThemeIcon color='green' variant='light'>
+              <IconReceipt size='1.4rem' />
             </ThemeIcon>
           </Group>
-          <Text size="xl" fw={700}>{stats?.transactions.total || 0}</Text>
-          <Text size="sm" c="dimmed">
+          <Text size='xl' fw={700}>
+            {stats?.transactions.total || 0}
+          </Text>
+          <Text size='sm' c='dimmed'>
             {stats?.transactions.pending || 0} pending
           </Text>
         </Card>
 
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
+        <Card shadow='sm' padding='lg' radius='md' withBorder>
+          <Group justify='space-between' mb='xs'>
             <Text fw={500}>Cash on Hand</Text>
-            <ThemeIcon color="yellow" variant="light">
-              <IconCash size="1.4rem" />
+            <ThemeIcon color='yellow' variant='light'>
+              <IconCash size='1.4rem' />
             </ThemeIcon>
           </Group>
-          <Stack gap="xs">
-            {stats?.cashBalances && Object.entries(stats.cashBalances).map(([currency, amount]) => (
-              <Group key={currency} gap="xs">
-                {getCurrencyIcon(currency)}
-                <NumberFormatter value={amount} thousandSeparator />
-                <Text size="sm" c="dimmed">{currency}</Text>
-              </Group>
-            ))}
+          <Stack gap='xs'>
+            {stats?.cashBalances &&
+              Object.entries(stats.cashBalances).map(([currency, amount]) => (
+                <Group key={currency} gap='xs'>
+                  {getCurrencyIcon(currency)}
+                  <NumberFormatter value={amount} thousandSeparator />
+                  <Text size='sm' c='dimmed'>
+                    {currency}
+                  </Text>
+                </Group>
+              ))}
             {(!stats?.cashBalances || Object.keys(stats.cashBalances).length === 0) && (
-              <Text size="sm" c="dimmed">No cash balances</Text>
+              <Text size='sm' c='dimmed'>
+                No cash balances
+              </Text>
             )}
           </Stack>
         </Card>
       </SimpleGrid>
 
       {/* Fleet Overview */}
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Group justify="space-between" mb="md">
-          <Text size="lg" fw={600}>Fleet Overview</Text>
-          <Badge variant="light">{yachts.length} yachts</Badge>
+      <Card shadow='sm' padding='lg' radius='md' withBorder>
+        <Group justify='space-between' mb='md'>
+          <Text size='lg' fw={600}>
+            Fleet Overview
+          </Text>
+          <Badge variant='light'>{yachts.length} yachts</Badge>
         </Group>
 
         {yachts.length > 0 ? (
@@ -221,57 +236,58 @@ export const Dashboard: React.FC = () => {
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {yachts.map((yacht) => (
+              {yachts.map(yacht => (
                 <Table.Tr key={yacht.id}>
                   <Table.Td>
                     <div>
                       <Text fw={500}>{yacht.name}</Text>
                       {yacht.imoNumber && (
-                        <Text size="sm" c="dimmed">{yacht.imoNumber}</Text>
+                        <Text size='sm' c='dimmed'>
+                          {yacht.imoNumber}
+                        </Text>
                       )}
                     </div>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm">
+                    <Text size='sm'>
                       {yacht.owner.profile.firstName} {yacht.owner.profile.lastName}
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm">
+                    <Text size='sm'>
                       {yacht.primaryCaptain
                         ? `${yacht.primaryCaptain.profile.firstName} ${yacht.primaryCaptain.profile.lastName}`
-                        : 'Not assigned'
-                      }
+                        : 'Not assigned'}
                     </Text>
                   </Table.Td>
                   <Table.Td>
-                    <Stack gap="xs">
+                    <Stack gap='xs'>
                       {yacht.cashBalances.map((balance, idx) => (
-                        <Group key={idx} gap="xs">
-                          <Text size="sm">
+                        <Group key={idx} gap='xs'>
+                          <Text size='sm'>
                             {balance.currencyCode.symbol}
                             <NumberFormatter value={balance.amount} thousandSeparator />
                           </Text>
-                          <Text size="xs" c="dimmed">{balance.currencyCode.code}</Text>
+                          <Text size='xs' c='dimmed'>
+                            {balance.currencyCode.code}
+                          </Text>
                         </Group>
                       ))}
                       {yacht.cashBalances.length === 0 && (
-                        <Text size="sm" c="dimmed">No balances</Text>
+                        <Text size='sm' c='dimmed'>
+                          No balances
+                        </Text>
                       )}
                     </Stack>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm">{yacht._count.transactions}</Text>
+                    <Text size='sm'>{yacht._count.transactions}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm">{yacht._count.yachtUsers}</Text>
+                    <Text size='sm'>{yacht._count.yachtUsers}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Badge
-                      variant="light"
-                      color={yacht.isActive ? 'green' : 'red'}
-                      size="sm"
-                    >
+                    <Badge variant='light' color={yacht.isActive ? 'green' : 'red'} size='sm'>
                       {yacht.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </Table.Td>
@@ -280,11 +296,11 @@ export const Dashboard: React.FC = () => {
             </Table.Tbody>
           </Table>
         ) : (
-          <Text c="dimmed" ta="center" py="xl">
+          <Text c='dimmed' ta='center' py='xl'>
             No yachts found. Contact your administrator to add yachts to your fleet.
           </Text>
         )}
       </Card>
     </Container>
   );
-}; 
+};

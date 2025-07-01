@@ -243,4 +243,4 @@ export interface ApiError {
   success: false;
   error: string;
   details?: Record<string, any>;
-} 
+}

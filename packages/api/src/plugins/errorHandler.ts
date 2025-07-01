@@ -8,16 +8,19 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
     const { log } = fastify;
 
     // Log error details
-    log.error({
-      error,
-      request: {
-        method: request.method,
-        url: request.url,
-        params: request.params,
-        query: request.query,
-        headers: request.headers
-      }
-    }, 'Request error');
+    log.error(
+      {
+        error,
+        request: {
+          method: request.method,
+          url: request.url,
+          params: request.params,
+          query: request.query,
+          headers: request.headers,
+        },
+      },
+      'Request error'
+    );
 
     // Zod validation errors
     if (error instanceof ZodError) {
@@ -26,8 +29,8 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
         error: 'Validation error',
         details: error.errors.map(err => ({
           field: err.path.join('.'),
-          message: err.message
-        }))
+          message: err.message,
+        })),
       });
     }
 
@@ -38,32 +41,32 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
           return reply.status(409).send({
             success: false,
             error: 'Record already exists',
-            details: { 
+            details: {
               field: error.meta?.target,
-              message: 'A record with this value already exists'
-            }
+              message: 'A record with this value already exists',
+            },
           });
-        
+
         case 'P2025':
           return reply.status(404).send({
             success: false,
             error: 'Record not found',
-            details: { message: 'The requested record was not found' }
+            details: { message: 'The requested record was not found' },
           });
-        
+
         case 'P2003':
           return reply.status(400).send({
             success: false,
             error: 'Foreign key constraint failed',
-            details: { message: 'Referenced record does not exist' }
+            details: { message: 'Referenced record does not exist' },
           });
-        
+
         default:
           log.error({ error }, 'Unhandled Prisma error');
           return reply.status(500).send({
             success: false,
             error: 'Database error',
-            details: { message: 'An unexpected database error occurred' }
+            details: { message: 'An unexpected database error occurred' },
           });
       }
     }
@@ -73,7 +76,7 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
       return reply.status(error.statusCode).send({
         success: false,
         error: error.message,
-        details: error.validation ? { validation: error.validation } : undefined
+        details: error.validation ? { validation: error.validation } : undefined,
       });
     }
 
@@ -82,7 +85,9 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
       return reply.status(413).send({
         success: false,
         error: 'File too large',
-        details: { message: `Maximum file size is ${fastify.initialConfig.limits?.fileSize || '10MB'}` }
+        details: {
+          message: `Maximum file size is ${fastify.initialConfig.limits?.fileSize || '10MB'}`,
+        },
       });
     }
 
@@ -91,7 +96,7 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
       return reply.status(401).send({
         success: false,
         error: 'Authentication failed',
-        details: { message: 'Invalid or expired token' }
+        details: { message: 'Invalid or expired token' },
       });
     }
 
@@ -100,46 +105,47 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) 
     return reply.status(500).send({
       success: false,
       error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? 
-        { message: error.message, stack: error.stack } : 
-        { message: 'An unexpected error occurred' }
+      details:
+        process.env.NODE_ENV === 'development'
+          ? { message: error.message, stack: error.stack }
+          : { message: 'An unexpected error occurred' },
     });
   });
 
   // Add success response helper
-  fastify.decorateReply('success', function(data: any, message?: string) {
+  fastify.decorateReply('success', function (data: any, message?: string) {
     return this.send({
       success: true,
       data,
-      message
+      message,
     });
   });
 
   // Add paginated response helper
-  fastify.decorateReply('paginated', function(
-    data: any[], 
-    pagination: { page: number; limit: number; total: number }
-  ) {
-    return this.send({
-      success: true,
-      data,
-      pagination: {
-        ...pagination,
-        pages: Math.ceil(pagination.total / pagination.limit)
-      }
-    });
-  });
+  fastify.decorateReply(
+    'paginated',
+    function (data: any[], pagination: { page: number; limit: number; total: number }) {
+      return this.send({
+        success: true,
+        data,
+        pagination: {
+          ...pagination,
+          pages: Math.ceil(pagination.total / pagination.limit),
+        },
+      });
+    }
+  );
 };
 
 declare module 'fastify' {
   interface FastifyReply {
     success(data: any, message?: string): FastifyReply;
     paginated(
-      data: any[], 
+      data: any[],
       pagination: { page: number; limit: number; total: number }
     ): FastifyReply;
   }
 }
 
 export { errorHandlerPlugin };
-export default fp(errorHandlerPlugin); 
+export default fp(errorHandlerPlugin);

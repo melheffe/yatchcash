@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Text,
-  Group,
-  ThemeIcon,
-  UnstyledButton,
-  Stack,
-  Badge
-} from '@mantine/core';
+import { Text, Group, ThemeIcon, UnstyledButton, Stack, Badge } from '@mantine/core';
 import {
   IconDashboard,
   IconShip,
@@ -15,7 +8,7 @@ import {
   IconCash,
   IconReport,
   IconSettings,
-  IconAlertTriangle
+  IconAlertTriangle,
 } from '@tabler/icons-react';
 
 interface NavLinkProps {
@@ -30,7 +23,7 @@ const NavLink: React.FC<NavLinkProps> = ({ icon, label, badge, active, onClick }
   return (
     <UnstyledButton
       onClick={onClick}
-      p="xs"
+      p='xs'
       style={{
         display: 'block',
         width: '100%',
@@ -40,14 +33,14 @@ const NavLink: React.FC<NavLinkProps> = ({ icon, label, badge, active, onClick }
       }}
     >
       <Group>
-        <ThemeIcon color={active ? 'blue' : 'gray'} variant="light">
+        <ThemeIcon color={active ? 'blue' : 'gray'} variant='light'>
           {icon}
         </ThemeIcon>
-        <Text size="sm" fw={active ? 600 : 500}>
+        <Text size='sm' fw={active ? 600 : 500}>
           {label}
         </Text>
         {badge && (
-          <Badge size="xs" variant="filled" color="red">
+          <Badge size='xs' variant='filled' color='red'>
             {badge}
           </Badge>
         )}
@@ -62,54 +55,54 @@ export const Navigation: React.FC = () => {
   const navItems = [
     {
       id: 'dashboard',
-      icon: <IconDashboard size="1rem" />,
+      icon: <IconDashboard size='1rem' />,
       label: 'Dashboard',
     },
     {
       id: 'yachts',
-      icon: <IconShip size="1rem" />,
+      icon: <IconShip size='1rem' />,
       label: 'Fleet Management',
     },
     {
       id: 'users',
-      icon: <IconUsers size="1rem" />,
+      icon: <IconUsers size='1rem' />,
       label: 'Crew & Users',
     },
     {
       id: 'transactions',
-      icon: <IconReceipt size="1rem" />,
+      icon: <IconReceipt size='1rem' />,
       label: 'Transactions',
     },
     {
       id: 'cash',
-      icon: <IconCash size="1rem" />,
+      icon: <IconCash size='1rem' />,
       label: 'Cash Balances',
     },
     {
       id: 'reports',
-      icon: <IconReport size="1rem" />,
+      icon: <IconReport size='1rem' />,
       label: 'Reports',
     },
     {
       id: 'alerts',
-      icon: <IconAlertTriangle size="1rem" />,
+      icon: <IconAlertTriangle size='1rem' />,
       label: 'Alerts',
       badge: '3', // Could be dynamic
     },
     {
       id: 'settings',
-      icon: <IconSettings size="1rem" />,
+      icon: <IconSettings size='1rem' />,
       label: 'Settings',
     },
   ];
 
   return (
-    <Stack gap="xs">
-      <Text fw={500} size="sm" c="dimmed" px="md" mb="xs">
+    <Stack gap='xs'>
+      <Text fw={500} size='sm' c='dimmed' px='md' mb='xs'>
         Navigation
       </Text>
-      
-      {navItems.map((item) => (
+
+      {navItems.map(item => (
         <NavLink
           key={item.id}
           icon={item.icon}
@@ -121,4 +114,4 @@ export const Navigation: React.FC = () => {
       ))}
     </Stack>
   );
-}; 
+};

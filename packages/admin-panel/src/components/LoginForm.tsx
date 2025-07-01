@@ -10,7 +10,7 @@ import {
   Stack,
   Alert,
   Group,
-  Anchor
+  Anchor,
 } from '@mantine/core';
 import { IconAlertCircle, IconShip } from '@tabler/icons-react';
 import { useAuth } from '../providers/AuthProvider';
@@ -24,7 +24,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,69 +48,65 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
   return (
     <Container size={420} my={40}>
-      <Group justify="center" mb={40}>
-        <IconShip size={40} color="#1971c2" />
-        <Title order={1} c="blue.7">YachtCash</Title>
+      <Group justify='center' mb={40}>
+        <IconShip size={40} color='#1971c2' />
+        <Title order={1} c='blue.7'>
+          YachtCash
+        </Title>
       </Group>
 
-      <Title ta="center" order={2} mb={5}>
+      <Title ta='center' order={2} mb={5}>
         Admin Panel
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mb={30}>
+      <Text c='dimmed' size='sm' ta='center' mb={30}>
         Sign in to access the management dashboard
       </Text>
 
-      <Paper withBorder shadow="md" p={30} mt={30} radius="md">
+      <Paper withBorder shadow='md' p={30} mt={30} radius='md'>
         <form onSubmit={handleSubmit}>
-          <Stack gap="md">
+          <Stack gap='md'>
             {error && (
-              <Alert icon={<IconAlertCircle size="1rem" />} color="red" variant="filled">
+              <Alert icon={<IconAlertCircle size='1rem' />} color='red' variant='filled'>
                 {error}
               </Alert>
             )}
 
             <TextInput
-              label="Email"
-              placeholder="admin@yachtcash.com"
+              label='Email'
+              placeholder='admin@yachtcash.com'
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               required
-              autoComplete="email"
-              size="md"
+              autoComplete='email'
+              size='md'
             />
 
             <PasswordInput
-              label="Password"
-              placeholder="Your password"
+              label='Password'
+              placeholder='Your password'
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
-              autoComplete="current-password"
-              size="md"
+              autoComplete='current-password'
+              size='md'
             />
 
-            <Group justify="space-between" mt="md">
-              <Anchor component="button" type="button" c="dimmed" size="xs">
+            <Group justify='space-between' mt='md'>
+              <Anchor component='button' type='button' c='dimmed' size='xs'>
                 Forgot password?
               </Anchor>
             </Group>
 
-            <Button
-              type="submit"
-              loading={isSubmitting}
-              size="md"
-              fullWidth
-              mt="xl"
-            >
+            <Button type='submit' loading={isSubmitting} size='md' fullWidth mt='xl'>
               Sign in
             </Button>
           </Stack>
         </form>
       </Paper>
 
-      <Text c="dimmed" size="sm" ta="center" mt={30}>
+      <Text c='dimmed' size='sm' ta='center' mt={30}>
         Need help? Contact your system administrator
       </Text>
     </Container>
   );
-}; 
+};

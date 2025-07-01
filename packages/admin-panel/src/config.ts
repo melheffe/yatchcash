@@ -7,8 +7,8 @@ export const config = {
   refreshInterval: 30000, // 30 seconds
   pagination: {
     defaultPageSize: 10,
-    maxPageSize: 100
-  }
+    maxPageSize: 100,
+  },
 };
 
-export default config; 
+export default config;

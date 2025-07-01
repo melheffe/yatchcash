@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => {
   // Load env file from root directory
   const env = loadEnv(mode, process.cwd() + '/../../', '');
-  
+
   const apiPort = env.API_PORT || '3001';
   const captainPort = env.CAPTAIN_PWA_PORT || '3002';
 
@@ -28,9 +28,9 @@ export default defineConfig(({ mode }) => {
                 cacheName: 'api-cache',
                 networkTimeoutSeconds: 3,
                 cacheableResponse: {
-                  statuses: [0, 200]
-                }
-              }
+                  statuses: [0, 200],
+                },
+              },
             },
             {
               urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
@@ -60,46 +60,46 @@ export default defineConfig(({ mode }) => {
               src: 'pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
-              purpose: 'any maskable'
+              purpose: 'any maskable',
             },
             {
               src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable'
-            }
+              purpose: 'any maskable',
+            },
           ],
           screenshots: [
             {
               src: 'screenshot-narrow.png',
               sizes: '540x720',
               type: 'image/png',
-              form_factor: 'narrow'
+              form_factor: 'narrow',
             },
             {
               src: 'screenshot-wide.png',
               sizes: '720x540',
               type: 'image/png',
-              form_factor: 'wide'
-            }
-          ]
-        }
-      })
+              form_factor: 'wide',
+            },
+          ],
+        },
+      }),
     ],
     server: {
       port: parseInt(captainPort),
       proxy: {
         '/api': {
           target: `http://localhost:${apiPort}`,
-          changeOrigin: true
-        }
-      }
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       outDir: 'dist',
-      sourcemap: true
+      sourcemap: true,
     },
     envDir: '../../', // Load .env from root directory
-    envPrefix: ['VITE_', 'CAPTAIN_PWA_', 'API_'] // Allow these prefixes
+    envPrefix: ['VITE_', 'CAPTAIN_PWA_', 'API_'], // Allow these prefixes
   };
-}); 
+});

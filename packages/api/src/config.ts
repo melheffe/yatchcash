@@ -23,13 +23,14 @@ export const config = {
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB
 
   // CORS - Allow all frontend ports and production URL
-  CORS_ORIGINS: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://your-app.herokuapp.com']
-    : [
-        `http://localhost:${process.env.ADMIN_PANEL_PORT || '3000'}`,
-        `http://localhost:${process.env.CAPTAIN_PWA_PORT || '3002'}`,
-        'http://localhost:5173' // Vite default
-      ],
+  CORS_ORIGINS:
+    process.env.NODE_ENV === 'production'
+      ? [process.env.FRONTEND_URL || 'https://your-app.herokuapp.com']
+      : [
+          `http://localhost:${process.env.ADMIN_PANEL_PORT || '3000'}`,
+          `http://localhost:${process.env.CAPTAIN_PWA_PORT || '3002'}`,
+          'http://localhost:5173', // Vite default
+        ],
 
   // Email (optional)
   SMTP_HOST: process.env.SMTP_HOST || '',
@@ -42,10 +43,10 @@ export const config = {
 
   // Security
   BCRYPT_ROUNDS: parseInt(process.env.BCRYPT_ROUNDS || '12'),
-  
+
   // Rate limiting
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100'),
-  RATE_LIMIT_WINDOW: process.env.RATE_LIMIT_WINDOW || '15 minutes'
+  RATE_LIMIT_WINDOW: process.env.RATE_LIMIT_WINDOW || '15 minutes',
 } as const;
 
 // Validation
@@ -65,4 +66,4 @@ if (!config.JWT_SECRET || config.JWT_SECRET === 'your-super-secret-jwt-key') {
   } else {
     console.warn('⚠️  Using default JWT_SECRET. Please set a secure JWT_SECRET in production!');
   }
-} 
+}

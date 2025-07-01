@@ -10,15 +10,15 @@ export interface TenantConfig {
 const getTenantInfo = () => {
   const hostname = window.location.hostname;
   const subdomain = hostname.split('.')[0];
-  
+
   // For development, we can use localhost with tenant header
   // For production, extract from subdomain
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
   const isProduction = !isLocalhost && !hostname.includes('staging');
-  
+
   return {
     subdomain: isLocalhost ? null : subdomain,
-    isProduction
+    isProduction,
   };
 };
 
@@ -29,7 +29,7 @@ export const config: TenantConfig = {
   tenantId: null, // Will be set after authentication
   subdomain,
   refreshInterval: 30000, // 30 seconds
-  isProduction
+  isProduction,
 };
 
 // Helper function to get API headers with tenant context
@@ -37,12 +37,12 @@ export const getApiHeaders = () => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
+
   // Add tenant context via header (fallback for development)
   if (config.tenantId) {
     headers['X-Tenant-ID'] = config.tenantId;
   }
-  
+
   return headers;
 };
 
@@ -52,6 +52,6 @@ export const buildApiUrl = (endpoint: string) => {
   if (!endpoint.startsWith('/api/tenant/') && !endpoint.startsWith('/health')) {
     endpoint = `/api/tenant${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
   }
-  
+
   return `${config.apiUrl}${endpoint}`;
-}; 
+};

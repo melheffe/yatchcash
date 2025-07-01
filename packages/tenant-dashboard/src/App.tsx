@@ -13,14 +13,16 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          flexDirection: 'column',
+          gap: '1rem',
+        }}
+      >
         <div>Loading YachtCash...</div>
       </div>
     );
@@ -53,4 +55,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

@@ -68,8 +68,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         headers: {
           ...getApiHeaders(),
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -104,11 +104,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await fetch(buildApiUrl('/auth/login'), {
         method: 'POST',
         headers: getApiHeaders(),
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
-          subdomain: config.subdomain 
-        })
+          subdomain: config.subdomain,
+        }),
       });
 
       const data = await response.json();
@@ -116,11 +116,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok && data.success) {
         // Store auth token
         localStorage.setItem('tenant_auth_token', data.token);
-        
+
         // Set user and tenant data
         setUser(data.user);
         setTenant(data.tenant);
-        
+
         // Update config with tenant ID
         config.tenantId = data.tenant.id;
       } else {
@@ -150,14 +150,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     login,
     logout,
-    error
+    error,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
@@ -166,4 +162,4 @@ export const useAuth = (): AuthContextType => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => {
   // Load env file from root directory
   const env = loadEnv(mode, process.cwd() + '/../../', '');
-  
+
   const apiPort = env.API_PORT || '3001';
   const adminPort = env.ADMIN_PANEL_PORT || '3000';
 
@@ -30,31 +30,31 @@ export default defineConfig(({ mode }) => {
             {
               src: 'pwa-192x192.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
             },
             {
               src: 'pwa-512x512.png',
               sizes: '512x512',
-              type: 'image/png'
-            }
-          ]
-        }
-      })
+              type: 'image/png',
+            },
+          ],
+        },
+      }),
     ],
     server: {
       port: parseInt(adminPort),
       proxy: {
         '/api': {
           target: `http://localhost:${apiPort}`,
-          changeOrigin: true
-        }
-      }
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       outDir: 'dist',
-      sourcemap: true
+      sourcemap: true,
     },
     envDir: '../../', // Load .env from root directory
-    envPrefix: ['VITE_', 'ADMIN_PANEL_', 'API_'] // Allow these prefixes
+    envPrefix: ['VITE_', 'ADMIN_PANEL_', 'API_'], // Allow these prefixes
   };
-}); 
+});

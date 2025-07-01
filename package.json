@@ -32,7 +32,7 @@
     "type-check:tenant": "cd packages/tenant-dashboard && npm run type-check",
     "lint-and-format": "npm run lint:fix && npm run format",
     "pre-commit": "lint-staged",
-    "prepare": "husky install",
+    "prepare": "node -e \"process.env.NODE_ENV !== 'production' && require('husky').install()\"",
     "db:generate": "cd packages/api && npx prisma generate",
     "db:migrate": "cd packages/api && npx prisma migrate dev",
     "db:studio": "cd packages/api && npx prisma studio",

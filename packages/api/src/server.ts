@@ -34,7 +34,10 @@ declare module 'fastify' {
   interface FastifyReply {
     success: (data?: any, message?: string) => FastifyReply;
     error: (message: string, statusCode?: number) => FastifyReply;
-    paginated: (data: any[], pagination: { page: number; limit: number; total: number }) => FastifyReply;
+    paginated: (
+      data: any[],
+      pagination: { page: number; limit: number; total: number }
+    ) => FastifyReply;
   }
 }
 
@@ -45,79 +48,83 @@ const fastify = Fastify({
       transport: {
         target: 'pino-pretty',
         options: {
-          colorize: true
-        }
-      }
-    })
-  }
+          colorize: true,
+        },
+      },
+    }),
+  },
 });
 
 // Initialize Prisma
 const prisma = new PrismaClient({
-  log: config.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error']
+  log: config.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
 });
 
 // Decorate fastify instance with prisma
 fastify.decorate('prisma', prisma);
 
 // Custom response decorators
-fastify.decorateReply('success', function(data?: any, message = 'Success') {
+fastify.decorateReply('success', function (data?: any, message = 'Success') {
   return this.send({
     success: true,
     message,
     data,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-fastify.decorateReply('error', function(message: string, statusCode = 400) {
+fastify.decorateReply('error', function (message: string, statusCode = 400) {
   return this.status(statusCode).send({
     success: false,
     message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-fastify.decorateReply('paginated', function(data: any[], pagination: { page: number; limit: number; total: number }) {
-  const { page, limit, total } = pagination;
-  const totalPages = Math.ceil(total / limit);
-  
-  return this.send({
-    success: true,
-    data,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1
-    },
-    timestamp: new Date().toISOString()
-  });
-});
+fastify.decorateReply(
+  'paginated',
+  function (data: any[], pagination: { page: number; limit: number; total: number }) {
+    const { page, limit, total } = pagination;
+    const totalPages = Math.ceil(total / limit);
+
+    return this.send({
+      success: true,
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
+);
 
 // Register plugins
 async function registerPlugins() {
   // Register CORS
   await fastify.register(cors, {
-    origin: config.NODE_ENV === 'production' 
-      ? [process.env.FRONTEND_URL || 'https://your-app.herokuapp.com']
-      : config.CORS_ORIGINS,
-    credentials: true
+    origin:
+      config.NODE_ENV === 'production'
+        ? [process.env.FRONTEND_URL || 'https://your-app.herokuapp.com']
+        : config.CORS_ORIGINS,
+    credentials: true,
   });
 
   // Register JWT
   await fastify.register(jwt, {
-    secret: config.JWT_SECRET
+    secret: config.JWT_SECRET,
   });
 
   // Register multipart for file uploads
   await fastify.register(multipart, {
     addToBody: true,
     limits: {
-      fileSize: config.MAX_FILE_SIZE
-    }
+      fileSize: config.MAX_FILE_SIZE,
+    },
   });
 
   // Register Swagger for API documentation
@@ -127,20 +134,18 @@ async function registerPlugins() {
         info: {
           title: 'YachtCash API',
           description: 'Maritime petty cash management system API',
-          version: '1.0.0'
+          version: '1.0.0',
         },
-        servers: [
-          { url: 'http://localhost:3001', description: 'Development server' }
-        ]
-      }
+        servers: [{ url: 'http://localhost:3001', description: 'Development server' }],
+      },
     });
 
     await fastify.register(swaggerUi, {
       routePrefix: '/docs',
       uiConfig: {
         docExpansion: 'list',
-        deepLinking: false
-      }
+        deepLinking: false,
+      },
     });
   }
 
@@ -157,14 +162,14 @@ async function registerPlugins() {
     await fastify.register(staticFiles, {
       root: path.join(__dirname, '../../admin-panel/dist'),
       prefix: '/admin/',
-      decorateReply: false
+      decorateReply: false,
     });
 
-    // Serve captain PWA  
+    // Serve captain PWA
     await fastify.register(staticFiles, {
       root: path.join(__dirname, '../../captain-pwa/dist'),
       prefix: '/captain/',
-      decorateReply: false
+      decorateReply: false,
     });
 
     // Default route to admin panel
@@ -178,11 +183,11 @@ async function registerPlugins() {
 async function registerRoutes() {
   // Health check
   fastify.get('/health', async (request, reply) => {
-    return { 
-      status: 'ok', 
+    return {
+      status: 'ok',
       timestamp: new Date().toISOString(),
       environment: config.NODE_ENV,
-      version: process.env.npm_package_version || '1.0.0'
+      version: process.env.npm_package_version || '1.0.0',
     };
   });
 
@@ -207,16 +212,16 @@ async function start() {
     // Start server
     const host = config.NODE_ENV === 'production' ? '0.0.0.0' : config.HOST;
     const port = config.PORT;
-    
+
     await fastify.listen({ host, port });
-    
+
     console.log(`🚀 YachtCash API Server running on ${host}:${port}`);
     console.log(`📱 Environment: ${config.NODE_ENV}`);
-    
+
     if (config.NODE_ENV === 'development') {
       console.log(`📖 API Documentation: http://${host}:${port}/docs`);
     }
-    
+
     if (config.NODE_ENV === 'production') {
       console.log(`🎛️  Admin Panel: http://${host}:${port}/admin/`);
       console.log(`⚓ Captain PWA: http://${host}:${port}/captain/`);
@@ -246,4 +251,4 @@ if (require.main === module) {
   start();
 }
 
-export default fastify; 
+export default fastify;

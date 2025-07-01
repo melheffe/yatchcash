@@ -40,8 +40,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await fetch('/api/auth/me', {
         headers: {
-          'Authorization': `Bearer ${tokenToVerify}`
-        }
+          Authorization: `Bearer ${tokenToVerify}`,
+        },
       });
 
       if (response.ok) {
@@ -66,19 +66,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const { token: newToken, user: userData } = data.data;
-        
+
         // Store in localStorage
         localStorage.setItem('yachtcash_token', newToken);
         localStorage.setItem('yachtcash_user', JSON.stringify(userData));
-        
+
         setToken(newToken);
         setUser(userData);
         return true;
@@ -104,10 +104,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    
+
     // Super admin has all permissions
     if (user.assignedRoles.includes('super-admin')) return true;
-    
+
     // Check if user has the specific permission
     // This would be expanded to check role-based permissions
     return user.assignedRoles.includes('admin') || user.assignedRoles.includes('manager');
@@ -119,14 +119,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
-    hasPermission
+    hasPermission,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
@@ -135,4 +131,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

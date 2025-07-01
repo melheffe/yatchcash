@@ -28,12 +28,12 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   await fastify.register(import('@fastify/jwt'), {
     secret: config.JWT_SECRET,
     sign: {
-      expiresIn: config.JWT_EXPIRES_IN
-    }
+      expiresIn: config.JWT_EXPIRES_IN,
+    },
   });
 
   // Authentication decorator
-  fastify.decorate('authenticate', async function(request: FastifyRequest) {
+  fastify.decorate('authenticate', async function (request: FastifyRequest) {
     try {
       await request.jwtVerify();
     } catch (err) {
@@ -45,15 +45,15 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.decorate('authorize', (requiredPermissions: string[]) => {
     return async (request: FastifyRequest) => {
       await fastify.authenticate(request);
-      
+
       const user = request.user;
-      
+
       // Get user's permissions from database
       const userWithProfile = await fastify.prisma.user.findUnique({
         where: { id: user.userId },
         include: {
-          profile: true
-        }
+          profile: true,
+        },
       });
 
       if (!userWithProfile) {
@@ -74,7 +74,7 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       }
 
       // Check if user has any of the required permissions
-      const hasPermission = requiredPermissions.some(permission => 
+      const hasPermission = requiredPermissions.some(permission =>
         userPermissions.includes(permission)
       );
 
@@ -85,4 +85,4 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   });
 };
 
-export default fp(authPlugin); 
+export default fp(authPlugin);
