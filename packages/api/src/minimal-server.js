@@ -96,23 +96,7 @@ fastify.get('/captain', async (request, reply) => {
   return reply.redirect(301, '/captain/');
 });
 
-// Serve SPA fallback for admin panel routes
-fastify.get('/admin/*', async (_request, reply) => {
-  return reply.sendFile('index.html', path.join(__dirname, '../../../packages/admin-panel/dist'));
-});
-
-// Serve SPA fallback for tenant dashboard routes
-fastify.get('/tenant/*', async (_request, reply) => {
-  return reply.sendFile(
-    'index.html',
-    path.join(__dirname, '../../../packages/tenant-dashboard/dist')
-  );
-});
-
-// Serve SPA fallback for captain PWA routes
-fastify.get('/captain/*', async (_request, reply) => {
-  return reply.sendFile('index.html', path.join(__dirname, '../../../packages/captain-pwa/dist'));
-});
+// Note: SPA fallback is handled by @fastify/static plugin automatically
 
 // Health check endpoint with environment info
 fastify.get('/health', async (_request, _reply) => {
