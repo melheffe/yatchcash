@@ -60,26 +60,36 @@ fastify.addHook('preHandler', async (request, _reply) => {
   request.prisma = prisma; // Make prisma available to routes
 });
 
-// Register static file serving for admin panel
-fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../../../packages/admin-panel/dist'),
-  prefix: '/admin/',
-  decorateReply: false,
-});
+// Serve static files without automatic routing
+const fs = require('fs');
 
-// Register static file serving for tenant dashboard
-fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../../../packages/tenant-dashboard/dist'),
-  prefix: '/tenant/',
-  decorateReply: false,
-});
+// Custom route handler for serving static files and SPA fallback
+const serveApp = appPath => {
+  return async (request, reply) => {
+    const filePath = request.url;
+    const fullPath = path.join(appPath, filePath.replace(/^\/[^/]+\//, ''));
 
-// Register static file serving for captain PWA
-fastify.register(require('@fastify/static'), {
-  root: path.join(__dirname, '../../../packages/captain-pwa/dist'),
-  prefix: '/captain/',
-  decorateReply: false,
-});
+    // Check if it's a file with extension (static asset)
+    if (path.extname(filePath) && fs.existsSync(fullPath)) {
+      return reply.sendFile(filePath.replace(/^\/[^/]+\//, ''), appPath);
+    }
+
+    // SPA fallback - serve index.html for routes without extensions
+    return reply.sendFile('index.html', appPath);
+  };
+};
+
+// Admin panel routes
+const adminPath = path.join(__dirname, '../../../packages/admin-panel/dist');
+fastify.get('/admin/*', serveApp(adminPath));
+
+// Tenant dashboard routes
+const tenantPath = path.join(__dirname, '../../../packages/tenant-dashboard/dist');
+fastify.get('/tenant/*', serveApp(tenantPath));
+
+// Captain PWA routes
+const captainPath = path.join(__dirname, '../../../packages/captain-pwa/dist');
+fastify.get('/captain/*', serveApp(captainPath));
 
 // Redirect /admin to /admin/ for better UX
 fastify.get('/admin', async (request, reply) => {
