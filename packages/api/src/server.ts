@@ -15,6 +15,7 @@ import { yachtRoutes } from './routes/yachts';
 import { transactionRoutes } from './routes/transactions';
 import { authPlugin } from './plugins/auth';
 import { errorHandlerPlugin } from './plugins/errorHandler';
+import sensible from '@fastify/sensible';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -146,6 +147,9 @@ async function registerPlugins() {
   // Register custom plugins
   await fastify.register(errorHandlerPlugin);
   await fastify.register(authPlugin);
+
+  // Sensible defaults and httpErrors
+  await fastify.register(sensible);
 
   // Serve static files for frontend apps (production only)
   if (config.NODE_ENV === 'production') {
