@@ -39,16 +39,6 @@ fastify.get('/health', async (request, reply) => {
   };
 });
 
-// Admin panel route - serve the index.html for SPA routing
-fastify.get('/admin/*', async (request, reply) => {
-  return reply.sendFile('index.html');
-});
-
-// Admin panel root route
-fastify.get('/admin', async (request, reply) => {
-  return reply.sendFile('index.html');
-});
-
 // Root endpoint
 fastify.get('/', async (request, reply) => {
   return { 
@@ -63,7 +53,7 @@ fastify.get('/', async (request, reply) => {
       'Role-based access control'
     ],
     links: {
-      admin: '/admin',
+      admin: '/admin/',
       api: '/api/status',
       health: '/health'
     }
