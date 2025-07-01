@@ -60,6 +60,12 @@ fastify.addHook('preHandler', async (request, _reply) => {
   request.prisma = prisma; // Make prisma available to routes
 });
 
+// Register @fastify/static to enable reply.sendFile method
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, '../../../'),
+  serve: false, // Don't auto-serve, we'll handle routing manually
+});
+
 // Serve static files without automatic routing
 const fs = require('fs');
 
