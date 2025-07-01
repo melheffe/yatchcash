@@ -13,7 +13,8 @@ import {
   Table,
   ActionIcon,
   Loader,
-  Alert
+  Alert,
+  NumberFormatter
 } from '@mantine/core';
 import {
   IconUsers,
@@ -22,30 +23,40 @@ import {
   IconCash,
   IconTrendingUp,
   IconAlertTriangle,
-  IconEye
+  IconEye,
+  IconCurrencyDollar,
+  IconCurrencyEuro
 } from '@tabler/icons-react';
-import { useAuth } from '../providers/AuthProvider';
+import { config } from '../config';
 
 interface DashboardStats {
   users: { total: number; active: number };
-  yachts: { total: number };
+  yachts: { total: number; active: number };
   transactions: { total: number; pending: number; flagged: number };
+  cashBalances: { [currency: string]: number };
 }
 
-interface RecentTransaction {
+interface YachtData {
   id: string;
-  amount: number;
-  currencyCode: string;
-  description: string;
-  yacht: { name: string };
-  createdAt: string;
-  status: string;
+  name: string;
+  imoNumber: string;
+  owner: string;
+  captain: string;
+  cashBalances: {
+    amount: number;
+    currency: string;
+    symbol: string;
+    threshold: number;
+    isLowBalance: boolean;
+  }[];
+  totalTransactions: number;
+  crewMembers: number;
+  isActive: boolean;
 }
 
 export const Dashboard: React.FC = () => {
-  const { token } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [yachts, setYachts] = useState<YachtData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,50 +64,52 @@ export const Dashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         
         // Fetch statistics
-        const statsResponse = await fetch('/api/admin/stats', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
+        const statsResponse = await fetch(`${config.apiUrl}/admin/stats`);
         if (!statsResponse.ok) {
           throw new Error('Failed to fetch dashboard statistics');
         }
-
         const statsData = await statsResponse.json();
         setStats(statsData.data);
 
-        // Fetch recent transactions
-        const transactionsResponse = await fetch('/api/transactions?limit=10&sortBy=createdAt&sortOrder=desc', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (transactionsResponse.ok) {
-          const transactionsData = await transactionsResponse.json();
-          setRecentTransactions(transactionsData.data);
+        // Fetch yachts data
+        const yachtsResponse = await fetch(`${config.apiUrl}/admin/yachts`);
+        if (yachtsResponse.ok) {
+          const yachtsData = await yachtsResponse.json();
+          setYachts(yachtsData.data);
         }
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Dashboard fetch error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (token) {
-      fetchDashboardData();
+    fetchDashboardData();
+    
+    // Set up auto-refresh
+    const interval = setInterval(fetchDashboardData, config.refreshInterval);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCurrencyIcon = (currency: string) => {
+    switch (currency.toUpperCase()) {
+      case 'USD': return <IconCurrencyDollar size="1rem" />;
+      case 'EUR': return <IconCurrencyEuro size="1rem" />;
+      default: return <IconCash size="1rem" />;
     }
-  }, [token]);
+  };
 
   if (isLoading) {
     return (
       <Container size="xl" py="xl">
         <Group justify="center">
           <Loader size="lg" />
+          <Text>Loading YachtCash dashboard...</Text>
         </Group>
       </Container>
     );
@@ -105,25 +118,24 @@ export const Dashboard: React.FC = () => {
   if (error) {
     return (
       <Container size="xl" py="xl">
-        <Alert color="red" title="Error loading dashboard">
+        <Alert color="red" title="Dashboard Error">
           {error}
+          <Text size="sm" mt="xs">
+            API: {config.apiUrl}
+          </Text>
         </Alert>
       </Container>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed': return 'green';
-      case 'pending': return 'yellow';
-      case 'flagged': return 'red';
-      default: return 'gray';
-    }
-  };
-
   return (
     <Container size="xl" py="xl">
-      <Title order={1} mb="xl">Dashboard</Title>
+      <Group justify="space-between" mb="xl">
+        <Title order={1}>🛥️ Maritime Dashboard</Title>
+        <Badge variant="light" color="green" size="lg">
+          Live Data
+        </Badge>
+      </Group>
 
       {/* Statistics Cards */}
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} mb="xl">
@@ -142,14 +154,14 @@ export const Dashboard: React.FC = () => {
 
         <Card shadow="sm" padding="lg" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
-            <Text fw={500}>Active Yachts</Text>
+            <Text fw={500}>Fleet Size</Text>
             <ThemeIcon color="cyan" variant="light">
               <IconShip size="1.4rem" />
             </ThemeIcon>
           </Group>
           <Text size="xl" fw={700}>{stats?.yachts.total || 0}</Text>
           <Text size="sm" c="dimmed">
-            Fleet overview
+            {stats?.yachts.active || 0} active yachts
           </Text>
         </Card>
 
@@ -168,59 +180,80 @@ export const Dashboard: React.FC = () => {
 
         <Card shadow="sm" padding="lg" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
-            <Text fw={500}>Flagged Items</Text>
-            <ThemeIcon color="red" variant="light">
-              <IconAlertTriangle size="1.4rem" />
+            <Text fw={500}>Cash on Hand</Text>
+            <ThemeIcon color="yellow" variant="light">
+              <IconCash size="1.4rem" />
             </ThemeIcon>
           </Group>
-          <Text size="xl" fw={700}>{stats?.transactions.flagged || 0}</Text>
-          <Text size="sm" c="dimmed">
-            Requires attention
-          </Text>
+          <Stack gap="xs">
+            {stats?.cashBalances && Object.entries(stats.cashBalances).map(([currency, amount]) => (
+              <Group key={currency} gap="xs">
+                {getCurrencyIcon(currency)}
+                <NumberFormatter value={amount} thousandSeparator />
+                <Text size="sm" c="dimmed">{currency}</Text>
+              </Group>
+            ))}
+          </Stack>
         </Card>
       </SimpleGrid>
 
-      {/* Recent Transactions */}
+      {/* Fleet Overview */}
       <Card shadow="sm" padding="lg" radius="md" withBorder>
         <Group justify="space-between" mb="md">
-          <Title order={3}>Recent Transactions</Title>
-          <Badge variant="light">Latest 10</Badge>
+          <Title order={3}>🛥️ Fleet Overview</Title>
+          <Badge variant="light">{yachts.length} Yacht{yachts.length !== 1 ? 's' : ''}</Badge>
         </Group>
 
-        {recentTransactions.length > 0 ? (
+        {yachts.length > 0 ? (
           <Table>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Amount</Table.Th>
-                <Table.Th>Description</Table.Th>
                 <Table.Th>Yacht</Table.Th>
+                <Table.Th>Owner</Table.Th>
+                <Table.Th>Captain</Table.Th>
+                <Table.Th>Cash Balances</Table.Th>
                 <Table.Th>Status</Table.Th>
-                <Table.Th>Date</Table.Th>
-                <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {recentTransactions.map((transaction) => (
-                <Table.Tr key={transaction.id}>
+              {yachts.map((yacht) => (
+                <Table.Tr key={yacht.id}>
                   <Table.Td>
-                    <Text fw={500}>
-                      {transaction.amount} {transaction.currencyCode}
-                    </Text>
+                    <Stack gap="xs">
+                      <Text fw={500}>{yacht.name}</Text>
+                      <Text size="sm" c="dimmed">{yacht.imoNumber}</Text>
+                    </Stack>
                   </Table.Td>
-                  <Table.Td>{transaction.description}</Table.Td>
-                  <Table.Td>{transaction.yacht.name}</Table.Td>
                   <Table.Td>
-                    <Badge color={getStatusColor(transaction.status)} variant="light">
-                      {transaction.status}
+                    <Text>{yacht.owner}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text>{yacht.captain}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Stack gap="xs">
+                      {yacht.cashBalances.map((balance, idx) => (
+                        <Group key={idx} gap="xs">
+                          <Badge 
+                            color={balance.isLowBalance ? 'red' : 'green'} 
+                            variant="light"
+                            size="sm"
+                          >
+                            <NumberFormatter 
+                              value={balance.amount} 
+                              prefix={balance.symbol}
+                              thousandSeparator 
+                            />
+                          </Badge>
+                          <Text size="xs" c="dimmed">{balance.currency}</Text>
+                        </Group>
+                      ))}
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge color={yacht.isActive ? 'green' : 'gray'} variant="light">
+                      {yacht.isActive ? 'Active' : 'Inactive'}
                     </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    {new Date(transaction.createdAt).toLocaleDateString()}
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon variant="light" color="blue">
-                      <IconEye size="1rem" />
-                    </ActionIcon>
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -228,7 +261,7 @@ export const Dashboard: React.FC = () => {
           </Table>
         ) : (
           <Text c="dimmed" ta="center" py="xl">
-            No recent transactions found
+            No yachts found. Use the seed endpoint to add demo data.
           </Text>
         )}
       </Card>
