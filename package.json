@@ -1,0 +1,37 @@
+{
+  "name": "yachtcash",
+  "version": "1.0.0",
+  "description": "Maritime petty cash management system",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:admin\" \"npm run dev:captain\"",
+    "dev:api": "cd packages/api && npm run dev",
+    "dev:admin": "cd packages/admin-panel && npm run dev",
+    "dev:captain": "cd packages/captain-pwa && npm run dev",
+    "build": "npm run build:shared && npm run build:api && npm run build:admin && npm run build:captain",
+    "build:shared": "cd packages/shared && npm run build",
+    "build:api": "cd packages/api && npm run build",
+    "build:admin": "cd packages/admin-panel && npm run build",
+    "build:captain": "cd packages/captain-pwa && npm run build",
+    "setup": "npm install && npm run build:shared",
+    "db:generate": "cd packages/api && npx prisma generate",
+    "db:migrate": "cd packages/api && npx prisma migrate dev",
+    "db:studio": "cd packages/api && npx prisma studio",
+    "env:check": "node -e \"require('dotenv').config(); console.log('✅ Environment loaded:', { API_PORT: process.env.API_PORT, DATABASE_URL: process.env.DATABASE_URL ? '***configured***' : 'missing' })\"",
+    "heroku-prebuild": "npm run setup",
+    "heroku-postbuild": "npm run build",
+    "start": "cd packages/api && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "heroku-run-build-script": true
+} 

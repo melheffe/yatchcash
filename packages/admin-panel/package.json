@@ -1,0 +1,35 @@
+{
+  "name": "@yachtcash/admin-panel",
+  "version": "1.0.0",
+  "description": "YachtCash Admin Panel built with React and Mantine",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yachtcash/shared": "file:../shared",
+    "@mantine/core": "^7.3.0",
+    "@mantine/hooks": "^7.3.0",
+    "@tabler/icons-react": "^2.44.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "@vitejs/plugin-react": "^4.1.1",
+    "eslint": "^8.51.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.4",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.0",
+    "vite-plugin-pwa": "^0.17.4"
+  }
+} 
