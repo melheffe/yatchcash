@@ -90,6 +90,54 @@ const serveApp = (appPath, appPrefix) => {
   };
 };
 
+// API routes must be registered BEFORE static file routes to take precedence
+// This ensures /api/tenant/auth/login works instead of being caught by /tenant/*
+
+// Health check endpoint with environment info
+fastify.get('/health', async (_request, _reply) => {
+  let dbStatus = 'unknown';
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'connected';
+  } catch (error) {
+    dbStatus = 'error';
+  }
+
+  return {
+    status: 'ok',
+    message: 'YachtCash API is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    database: dbStatus,
+  };
+});
+
+// API Status endpoint
+fastify.get('/api/status', async (request, reply) => {
+  try {
+    const tenantCount = await prisma.tenant.count();
+    const userCount = await prisma.user.count();
+    const yachtCount = await prisma.yacht.count();
+
+    return {
+      success: true,
+      data: {
+        status: 'operational',
+        database: 'connected',
+        tenants: tenantCount,
+        users: userCount,
+        yachts: yachtCount,
+        timestamp: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    return reply.status(500).send({
+      success: false,
+      error: 'Database connection failed',
+    });
+  }
+});
+
 // Admin panel routes
 const adminPath = path.join(__dirname, '../../../packages/admin-panel/dist');
 fastify.get('/admin/*', serveApp(adminPath, '/admin/'));
@@ -119,25 +167,6 @@ fastify.get('/captain', async (request, reply) => {
 
 // Note: SPA fallback is handled by @fastify/static plugin automatically
 
-// Health check endpoint with environment info
-fastify.get('/health', async (_request, _reply) => {
-  let dbStatus = 'unknown';
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    dbStatus = 'connected';
-  } catch (error) {
-    dbStatus = 'error';
-  }
-
-  return {
-    status: 'ok',
-    message: 'YachtCash API is running!',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    database: dbStatus,
-  };
-});
-
 // Root endpoint
 fastify.get('/', async (_request, _reply) => {
   return {
@@ -163,32 +192,6 @@ fastify.get('/', async (_request, _reply) => {
     },
     note: 'Visit the applications above to access the YachtCash interfaces',
   };
-});
-
-// API Status endpoint
-fastify.get('/api/status', async (request, reply) => {
-  try {
-    const tenantCount = await prisma.tenant.count();
-    const userCount = await prisma.user.count();
-    const yachtCount = await prisma.yacht.count();
-
-    return {
-      success: true,
-      data: {
-        status: 'operational',
-        database: 'connected',
-        tenants: tenantCount,
-        users: userCount,
-        yachts: yachtCount,
-        timestamp: new Date().toISOString(),
-      },
-    };
-  } catch (error) {
-    return reply.status(500).send({
-      success: false,
-      error: 'Database connection failed',
-    });
-  }
 });
 
 // ================================
