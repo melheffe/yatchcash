@@ -24,8 +24,24 @@ const getTenantInfo = () => {
 
 const { subdomain, isProduction } = getTenantInfo();
 
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // Check for explicit environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // In production, use the same domain as the current app
+  if (isProduction) {
+    return window.location.origin;
+  }
+
+  // Default to localhost for development
+  return 'http://localhost:3001';
+};
+
 export const config: TenantConfig = {
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  apiUrl: getApiUrl(),
   tenantId: null, // Will be set after authentication
   subdomain,
   refreshInterval: 30000, // 30 seconds

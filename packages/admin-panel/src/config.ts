@@ -1,4 +1,19 @@
-export const API_BASE_URL = 'https://yatchcash-b0f8671844cc.herokuapp.com/api';
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // Check if we're in production (not localhost)
+  const isProduction =
+    !window.location.hostname.includes('localhost') &&
+    !window.location.hostname.includes('127.0.0.1');
+
+  if (isProduction) {
+    return `${window.location.origin}/api`;
+  }
+
+  // Default to localhost for development
+  return 'http://localhost:3001/api';
+};
+
+export const API_BASE_URL = getApiUrl();
 
 export const config = {
   apiUrl: API_BASE_URL,
