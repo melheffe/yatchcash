@@ -389,7 +389,7 @@ fastify.post('/api/tenant/auth/login', async (request, reply) => {
     }
 
     // Find user by email and tenant
-    const user = await prisma.user.findFirst({
+    let user = await prisma.user.findFirst({
       where: {
         email,
         tenantId: tenant?.id || null,
@@ -400,6 +400,20 @@ fastify.post('/api/tenant/auth/login', async (request, reply) => {
         tenant: true,
       },
     });
+
+    // If no user found with tenant context, try finding by email only (for demo users)
+    if (!user) {
+      user = await prisma.user.findFirst({
+        where: {
+          email,
+          status: 'ACTIVE',
+        },
+        include: {
+          profile: true,
+          tenant: true,
+        },
+      });
+    }
 
     if (!user) {
       return reply.status(401).send({
