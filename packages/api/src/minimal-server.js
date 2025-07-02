@@ -414,17 +414,29 @@ fastify.post('/api/tenant/auth/login', async (request, reply) => {
     // Generate a simple token (in production, use JWT with proper signing)
     const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
 
+    // For demo users without tenant, create a default tenant response
+    let tenantResponse = user.tenant;
+    if (!tenantResponse && !user.tenantId) {
+      tenantResponse = {
+        id: 'demo',
+        name: 'Demo Account',
+        subdomain: 'demo',
+        status: 'ACTIVE',
+        subscriptionPlan: 'demo',
+      };
+    }
+
     return {
       success: true,
       token,
       user: {
         id: user.id,
         email: user.email,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || 'demo',
         assignedRoles: user.assignedRoles,
         profile: user.profile,
       },
-      tenant: user.tenant,
+      tenant: tenantResponse,
     };
   } catch (error) {
     return reply.status(500).send({
@@ -488,16 +500,28 @@ fastify.post('/api/tenant/auth/verify', async (request, reply) => {
       });
     }
 
+    // For demo users without tenant, create a default tenant response
+    let tenantResponse = user.tenant;
+    if (!tenantResponse && !user.tenantId) {
+      tenantResponse = {
+        id: 'demo',
+        name: 'Demo Account',
+        subdomain: 'demo',
+        status: 'ACTIVE',
+        subscriptionPlan: 'demo',
+      };
+    }
+
     return {
       success: true,
       user: {
         id: user.id,
         email: user.email,
-        tenantId: user.tenantId,
+        tenantId: user.tenantId || 'demo',
         assignedRoles: user.assignedRoles,
         profile: user.profile,
       },
-      tenant: user.tenant,
+      tenant: tenantResponse,
     };
   } catch (error) {
     return reply.status(500).send({
